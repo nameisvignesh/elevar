@@ -1,129 +1,116 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { sendEmail } from '@/lib/email';
+import { NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    let name: string | undefined;
-    let email: string | undefined;
-    let linkedin: string | undefined;
-    let portfolioName: string | undefined;
-    let location: string | undefined;
-    let role: string | undefined;
-    let attachment: { filename: string; buffer: Buffer; contentType?: string } | null = null;
+    const body = await req.json();
+    const {
+      name,
+      email,
+      linkedin,
+      location,
+      role,
+      portfolioName,
+      portfolioBase64,
+      applicationId,
+    } = body;
 
-    const contentType = req.headers.get('content-type') || '';
-    if (contentType.includes('multipart/form-data')) {
-      const formData = await req.formData();
-      name = (formData.get('name') as string) || undefined;
-      email = (formData.get('email') as string) || undefined;
-      linkedin = (formData.get('linkedin') as string) || undefined;
-      location = (formData.get('location') as string) || undefined;
-      role = (formData.get('role') as string) || undefined;
-      const fileField = formData.get('portfolio') || formData.get('resume');
-      if (fileField && typeof (fileField as any).arrayBuffer === 'function') {
-        const f: any = fileField;
-        const arrayBuffer = await f.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const filename: string = f.name || f.filename || 'portfolio-file';
-        portfolioName = filename;
-        attachment = {
-          filename,
-          buffer,
-          ...(f.type ? { contentType: f.type } : {}),
-        };
-      }
-    } else {
-      const body = await req.json();
-      name = body.name;
-      email = body.email;
-      linkedin = body.linkedin;
-      portfolioName = body.resumeName || body.portfolioName;
-      location = body.location;
-      role = body.role;
-    }
-
-    if (!name || !email || !linkedin || !location || !role) {
+    // Validate required fields
+    if (!name || !email || !role || !portfolioBase64) {
       return NextResponse.json(
-        { success: false, error: 'Please fill in all required fields.' },
+        { message: 'Missing required application fields.' },
         { status: 400 }
       );
     }
 
-    // Generate unique application reference ID
-    const applicationId = `ELV-CAREER-${Date.now().toString(36).toUpperCase()}`;
-    const timestamp = new Date().toISOString();
-    const destinationEmail = 'elevardigitalstudio@gmail.com';
+    // Configure Nodemailer transporter with Gmail SMTP
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER || 'elevardigitalstudio@gmail.com',
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
 
-    const subject = `💼 New Career Registration [${applicationId}] - ${name} (${role})`;
-    const textContent = `
-  New Candidate Registration Received!
+    // Convert base64 string back into a Buffer for the file attachment
+    const fileBuffer = Buffer.from(portfolioBase64, 'base64');
 
-  Application ID: ${applicationId}
-  Date & Time: ${timestamp}
-
-  Candidate Name: ${name}
-  Candidate Email: ${email}
-  Role Applied For: ${role}
-  LinkedIn Profile: ${linkedin}
-  Location Address: ${location}
-  Portfolio File Name: ${portfolioName || 'Uploaded'}
-
-  Target Recipient: ${destinationEmail}
-    `.trim();
-
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #333; padding: 24px; background: #0d0d0d; color: #fff; border-radius: 12px;">
-        <h2 style="color: #00b4d8; margin-top: 0;">💼 New Career Registration</h2>
-        <p style="color: #ccc;">A new candidate has registered to work at <strong>Elevar Studio</strong>.</p>
-        <hr style="border-color: #333;" />
-        <table style="width: 100%; border-collapse: collapse; margin-top: 16px; color: #eee;">
-          <tr><td style="padding: 8px 0; color: #888; width: 140px;">Application ID:</td><td style="font-weight: bold; color: #00b4d8;">${applicationId}</td></tr>
-          <tr><td style="padding: 8px 0; color: #888;">Candidate Name:</td><td><strong>${name}</strong></td></tr>
-          <tr><td style="padding: 8px 0; color: #888;">Candidate Email:</td><td><a href="mailto:${email}" style="color: #00b4d8;">${email}</a></td></tr>
-          <tr><td style="padding: 8px 0; color: #888;">Role Chosen:</td><td><strong>${role}</strong></td></tr>
-          <tr><td style="padding: 8px 0; color: #888;">LinkedIn Profile:</td><td><a href="${linkedin}" target="_blank" style="color: #38bdf8;">${linkedin}</a></td></tr>
-          <tr><td style="padding: 8px 0; color: #888;">Location Address:</td><td>${location}</td></tr>
-          <tr><td style="padding: 8px 0; color: #888;">Portfolio File:</td><td>${portfolioName || 'Attached'}</td></tr>
-        </table>
-        <hr style="border-color: #333; margin-top: 20px;" />
-        <p style="font-size: 12px; color: #666; margin-bottom: 0;">Sent via Elevar Studio Candidate Portal to ${destinationEmail}</p>
-      </div>
-    `;
-
-    const attachments = attachment
-      ? [{ filename: attachment.filename, content: attachment.buffer, contentType: attachment.contentType }]
-      : undefined;
-
-    const emailResult = await sendEmail({
-      to: destinationEmail,
+    // Mail configuration
+    const mailOptions = {
+      from: `"Elevar Career Portal" <${process.env.GMAIL_USER || 'elevardigitalstudio@gmail.com'}>`,
+      to: 'elevardigitalstudio@gmail.com',
       replyTo: email,
-      subject,
-      text: textContent,
-      html: htmlContent,
-      attachments,
-    });
+      subject: `[Application ${applicationId}] ${role} - ${name}`,
+      text: `
+New Job Application Received!
 
-    return NextResponse.json({
-      success: true,
-      message: 'Application registered successfully.',
-      applicationId,
-      timestamp,
-      destinationEmail,
-      emailResult,
-      details: {
-        name,
-        email,
-        linkedin,
-        resumeName: portfolioName || 'Portfolio provided',
-        attachment: attachment ? { filename: attachment.filename, size: attachment.buffer.length } : undefined,
-        location,
-        role
-      }
-    });
-  } catch (error: any) {
-    console.error('Error processing career submission:', error);
+Application ID: ${applicationId}
+Role: ${role}
+
+Applicant Details:
+------------------
+Name: ${name}
+Email: ${email}
+Location: ${location || 'Not provided'}
+LinkedIn: ${linkedin || 'Not provided'}
+
+Portfolio file attached: ${portfolioName}
+      `,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; color: #1e293b;">
+          <h2 style="color: #0077b6; margin-bottom: 4px;">New Job Application</h2>
+          <p style="color: #64748b; margin-top: 0;">Application ID: <strong>${applicationId}</strong></p>
+          
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+          
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr>
+              <td style="padding: 8px 0; color: #64748b; width: 120px;"><strong>Role:</strong></td>
+              <td style="padding: 8px 0;">${role}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #64748b;"><strong>Name:</strong></td>
+              <td style="padding: 8px 0;">${name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #64748b;"><strong>Email:</strong></td>
+              <td style="padding: 8px 0;"><a href="mailto:${email}">${email}</a></td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #64748b;"><strong>Location:</strong></td>
+              <td style="padding: 8px 0;">${location || 'Not provided'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #64748b;"><strong>LinkedIn:</strong></td>
+              <td style="padding: 8px 0;">${linkedin ? `<a href="${linkedin}">${linkedin}</a>` : 'Not provided'}</td>
+            </tr>
+          </table>
+
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
+          <p style="font-size: 13px; color: #64748b;">
+            📎 Portfolio file <strong>${portfolioName}</strong> is attached to this email.
+          </p>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: portfolioName,
+          content: fileBuffer,
+        },
+      ],
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
     return NextResponse.json(
-      { success: false, error: 'Failed to process career application. Please try again.' },
+      { message: 'Application submitted successfully.', applicationId },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('Failed to send career application email:', error);
+    return NextResponse.json(
+      { message: error?.message || 'Failed to send email. Please try again.' },
       { status: 500 }
     );
   }

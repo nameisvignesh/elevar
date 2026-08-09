@@ -1,93 +1,87 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from 'react';
-import Hls from 'hls.js';
-import Link from 'next/link';
-import { Volume2, VolumeX, ArrowLeft } from 'lucide-react';
-import { getYouTubeEmbedUrl, isYouTubeVideoUrl } from '@/lib/cloudinary';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { Volume2, VolumeX, ArrowLeft, Play, Pause } from "lucide-react";
 
 type VideoItem = {
   id: string;
   title: string;
-  category: string;
-  // primary src (fallback) and optional bitrate-specific variants
   src: string;
-  lowSrc?: string;
-  medSrc?: string;
-  highSrc?: string;
-  // optional HLS master playlist and WebM variants
-  hlsSrc?: string;
-  lowWebm?: string;
-  medWebm?: string;
-  highWebm?: string;
-  poster: string;
+  poster?: string;
 };
-
-const youtubeVideoUrlOne = process.env.NEXT_PUBLIC_YOUTUBE_VIDEO_URL_1?.trim();
-const youtubeVideoUrlTwo = process.env.NEXT_PUBLIC_YOUTUBE_VIDEO_URL_2?.trim();
-const youtubeVideoUrlThree = process.env.NEXT_PUBLIC_YOUTUBE_VIDEO_URL_3?.trim();
-const useYouTube = (process.env.NEXT_PUBLIC_USE_YOUTUBE || '').toLowerCase() === 'true';
 
 const videos: VideoItem[] = [
   {
-    id: 'video-1',
-    title: 'Brand Story Teaser',
-    category: 'Brand Campaign',
-    src: useYouTube && youtubeVideoUrlOne
-      ? youtubeVideoUrlOne
-      : '/family-friend.web.mp4',
-    lowSrc: '/family-friend-480.mp4',
-    medSrc: '/family-friend-720.mp4',
-    highSrc: '/family-friend.web.mp4',
-    poster: '/logo.svg',
+    id: "video-1",
+    title: "Family Friend",
+    src: "https://xiniunszguqd8c4n.public.blob.vercel-storage.com/family-friend.mp4",
+    poster: "/logo.svg",
   },
   {
-    id: 'video-2',
-    title: 'Campaign Launch Edit',
-    category: 'Social Content Engine',
-    src: useYouTube && youtubeVideoUrlTwo
-      ? youtubeVideoUrlTwo
-      : '/final-out-tiles.web.mp4',
-    lowSrc: '/final-out-tiles-480.mp4',
-    medSrc: '/final-out-tiles-720.mp4',
-    highSrc: '/final-out-tiles.web.mp4',
-    poster: '/logo.svg',
+    id: "video-2",
+    title: "Final Out Tiles",
+    src: "https://xiniunszguqd8c4n.public.blob.vercel-storage.com/final-out-tiles.mp4",
+    poster: "/logo.svg",
   },
   {
-    id: 'video-3',
-    title: 'Product Demo Reel',
-    category: 'Product & Tech',
-    src: useYouTube && youtubeVideoUrlThree
-      ? youtubeVideoUrlThree
-      : '/nanotiles.web.mp4',
-    lowSrc: '/nanotiles-480.mp4',
-    medSrc: '/nanotiles-720.mp4',
-    highSrc: '/nanotiles.web.mp4',
-    poster: '/logo.svg',
+    id: "video-3",
+    title: "Nano Tiles",
+    src: "https://xiniunszguqd8c4n.public.blob.vercel-storage.com/nanotiles.mp4",
+    poster: "/logo.svg",
   },
 ];
 
-export default function SelectedWorkPage(): JSX.Element {
+export default function SelectedWorkPage() {
   return (
-    <main className="page selected-hero">
+    <main style={{ minHeight: "100vh", paddingBottom: "80px" }}>
       <div className="container">
-        <div style={{ marginBottom: 20 }}>
-          <Link href="/" className="btn btn-secondary compact" style={{ gap: 6 }}>
-            <ArrowLeft size={14} /> Back to Home
+        {/* Navigation Back Link */}
+        <div style={{ marginBottom: 24, marginTop: 24 }}>
+          <Link
+            href="/"
+            className="btn btn-secondary compact"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <ArrowLeft size={16} />
+            Back to Home
           </Link>
         </div>
 
-        <div className="selected-head">
+        {/* Header Section */}
+        <div className="selected-head" style={{ marginBottom: 40 }}>
           <div>
             <span className="eyebrow">Portfolio Showcase</span>
-            <h1>Selected Work</h1>
-            <p className="muted" style={{ maxWidth: 540 }}>
-              Explore our strategic content engines.
+            <h1 style={{ fontSize: "2.5rem", fontWeight: 700, margin: "8px 0 12px" }}>
+              Selected Work
+            </h1>
+            <p
+              className="muted"
+              style={{
+                maxWidth: 540,
+                fontSize: "1.1rem",
+                lineHeight: 1.6,
+              }}
+            >
+              Explore our strategic content engines engineered for retention, authority, and high audience conversion.
             </p>
           </div>
         </div>
 
-        <section aria-label="Selected work videos" className="video-card-grid">
+        {/* Video Portfolio Grid */}
+        <section
+          aria-label="Selected work videos"
+          className="video-card-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+            gap: "24px",
+          }}
+        >
           {videos.map((video) => (
             <VideoCard key={video.id} video={video} />
           ))}
@@ -97,281 +91,331 @@ export default function SelectedWorkPage(): JSX.Element {
   );
 }
 
+/* =========================================================
+   VIDEO CARD COMPONENT
+   ========================================================= */
+
 function VideoCard({ video }: { video: VideoItem }) {
-  const [isMuted, setIsMuted] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   const [inView, setInView] = useState(false);
-  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
-  const [quality, setQuality] = useState<'auto' | 'low' | 'med' | 'high' | 'hls'>('auto');
-  const hlsRef = useRef<any | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [volume, setVolume] = useState(0.8);
+  const [isLoading, setIsLoading] = useState(true);
 
+  /* Observer to detect when video card enters viewport */
   useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
-    el.muted = isMuted;
-    el.defaultMuted = isMuted;
-  }, [isMuted]);
+    const container = containerRef.current;
+    if (!container) return;
 
-  useEffect(() => {
-    // Lazy-load media when the card scrolls into view and pick bitrate
-    const node = containerRef.current;
-    if (!node) return;
-
-    const chooseQuality = (v: VideoItem) => {
-      try {
-        const nav: any = navigator as any;
-        const conn = nav.connection || nav.mozConnection || nav.webkitConnection;
-        const eff = conn?.effectiveType || '';
-        const deviceMemory = nav.deviceMemory || 4;
-
-        if (eff.includes('2g') || eff === 'slow-2g' || deviceMemory <= 1) {
-          return v.lowSrc || v.medSrc || v.highSrc || v.src;
-        }
-        if (eff.includes('3g')) {
-          return v.medSrc || v.lowSrc || v.highSrc || v.src;
-        }
-        // Default to 720p on fast connections; users can explicitly choose High.
-        return v.medSrc || v.lowSrc || v.highSrc || v.src;
-      } catch (e) {
-        return v.src;
-      }
-    };
-
-    const obs = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setInView(true);
-            let chosen = chooseQuality(video);
-            if (quality === 'low') chosen = video.lowSrc || video.medSrc || video.highSrc || video.src;
-            if (quality === 'med') chosen = video.medSrc || video.lowSrc || video.highSrc || video.src;
-            if (quality === 'high') chosen = video.highSrc || video.medSrc || video.lowSrc || video.src;
-            if (quality === 'hls') chosen = video.hlsSrc || chosen;
-            setLoadedSrc(chosen);
-            obs.unobserve(node);
-          }
-        });
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        setInView(entry.isIntersecting);
       },
-      { root: null, rootMargin: '300px', threshold: 0.25 }
+      {
+        root: null,
+        rootMargin: "150px 0px",
+        threshold: 0.15,
+      }
     );
-    obs.observe(node);
-    return () => obs.disconnect();
-  }, [video.src]);
 
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  /* Synchronize autoplay on scroll (MUST start muted per browser policy) */
   useEffect(() => {
-    // re-select source when user changes quality manually
-    if (!inView) return;
-    if (quality === 'auto') {
-      const nav: any = navigator as any;
-      const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
-      const effectiveType = connection?.effectiveType || '';
-      const automaticSource = effectiveType.includes('2g') || effectiveType === 'slow-2g' || (nav.deviceMemory || 4) <= 1
-        ? video.lowSrc || video.medSrc || video.highSrc || video.src
-        : effectiveType.includes('3g')
-          ? video.medSrc || video.lowSrc || video.highSrc || video.src
-          : video.medSrc || video.lowSrc || video.highSrc || video.src;
-      setLoadedSrc(automaticSource);
-      return;
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
+    if (!inView) {
+      videoElement.pause();
+      setIsPlaying(false);
+    } else {
+      videoElement.muted = isMuted;
+      videoElement
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
     }
-    if (!containerRef.current) return;
-    const chosen = quality === 'hls' ? (video.hlsSrc || loadedSrc) : (quality === 'low' ? (video.lowSrc || loadedSrc) : quality === 'med' ? (video.medSrc || loadedSrc) : quality === 'high' ? (video.highSrc || loadedSrc) : loadedSrc);
-    setLoadedSrc(chosen ?? loadedSrc);
-  }, [quality]);
+  }, [inView]);
 
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
+  /* Direct, synchronous Mute/Unmute handler triggered by user gesture */
+  const toggleMute = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
 
-    // cleanup any previous hls
-    if (hlsRef.current) {
-      try { hlsRef.current.destroy(); } catch (e) { }
-      hlsRef.current = null;
-    }
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
 
-    if (!loadedSrc) {
-      v.removeAttribute('src');
-      v.load();
-      return;
+    const newMutedState = !videoElement.muted;
+
+    // 1. Direct synchronous modification of DOM properties
+    videoElement.muted = newMutedState;
+    if (!newMutedState) {
+      const activeVolume = volume > 0 ? volume : 0.8;
+      videoElement.volume = activeVolume;
+      setVolume(activeVolume);
     }
 
-    // If HLS source or m3u8, use hls.js when needed
-    if ((video.hlsSrc && quality === 'hls') || loadedSrc.endsWith('.m3u8')) {
-      if (Hls.isSupported()) {
-        const hls = new Hls({ enableWorker: true });
-        hlsRef.current = hls;
-        hls.loadSource(video.hlsSrc || loadedSrc);
-        hls.attachMedia(v);
-        hls.on(Hls.Events.MANIFEST_PARSED, function () {
-          if (!v.muted) v.play().catch(() => { });
-        });
-      } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
-        v.src = video.hlsSrc || loadedSrc;
-        v.load();
-        if (!v.muted) v.play().catch(() => { });
-      }
-      return;
+    // 2. React State Sync
+    setIsMuted(newMutedState);
+
+    // 3. Guarantee playback resumes upon unmuting
+    videoElement
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch((err) => console.warn("Browser blocked sound playback:", err));
+  }, [volume]);
+
+  /* Direct Play/Pause Toggle */
+  const togglePlay = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    e?.preventDefault();
+
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
+    if (videoElement.paused) {
+      videoElement
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => console.warn("Playback error:", err));
+    } else {
+      videoElement.pause();
+      setIsPlaying(false);
     }
+  }, []);
 
-    // For normal mp4/webm sources, pick webm if supported and available
-    const supportsWebM = v.canPlayType('video/webm; codecs="vp9,opus"') || v.canPlayType('video/webm; codecs="vp8,vorbis"');
-    let finalSrc = loadedSrc;
-    if (supportsWebM) {
-      if (quality === 'low' && video.lowWebm) finalSrc = video.lowWebm;
-      else if (quality === 'med' && video.medWebm) finalSrc = video.medWebm;
-      else if (quality === 'high' && video.highWebm) finalSrc = video.highWebm;
+  /* Volume slider adjustment */
+  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+
+    const newVolume = Number(e.target.value);
+    setVolume(newVolume);
+
+    const videoElement = videoRef.current;
+    if (videoElement) {
+      videoElement.volume = newVolume;
+      const shouldMute = newVolume === 0;
+      videoElement.muted = shouldMute;
+      setIsMuted(shouldMute);
     }
-
-    v.src = finalSrc;
-    v.load();
-    if (inView && !v.muted) {
-      v.play().catch(() => { });
-    }
-
-    return () => {
-      if (hlsRef.current) {
-        try { hlsRef.current.destroy(); } catch (e) { }
-        hlsRef.current = null;
-      }
-    };
-  }, [loadedSrc, inView]);
-
-  const toggleMute = async (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    const el = videoRef.current;
-    if (!el) return;
-
-    const nextMuted = !isMuted;
-    el.muted = nextMuted;
-    el.defaultMuted = nextMuted;
-
-    if (!nextMuted) {
-      el.volume = 1;
-    }
-
-    setIsMuted(nextMuted);
-
-    if (!nextMuted) {
-      try {
-        await el.play();
-      } catch (error) {
-        console.error('Audio playback interrupted:', error);
-      }
-    }
-  };
-
-  const toggleYouTubeMute = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setIsMuted((prev) => !prev);
-  };
-
-  const youTubeEmbedUrl = getYouTubeEmbedUrl(video.src);
-  const shouldUseYouTube = isYouTubeVideoUrl(video.src);
-  const youtubeVideoId = youTubeEmbedUrl?.split('/').pop()?.split('?')[0] ?? '';
-  const youtubePlayerSrc = shouldUseYouTube && youTubeEmbedUrl && inView
-    ? `${youTubeEmbedUrl}?autoplay=1&mute=${isMuted ? 1 : 0}&controls=0&loop=1&playlist=${youtubeVideoId}&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&disablekb=1`
-    : null;
+  }, []);
 
   return (
     <div
       ref={containerRef}
       className="video-card tilt-card"
-      style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}
-      role="region"
-      aria-label={`Video: ${video.title}`}
+      style={{
+        position: "relative",
+        borderRadius: "16px",
+        overflow: "hidden",
+        background: "#050505",
+        border: "1px solid rgba(255, 255, 255, 0.08)",
+        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.4)",
+        userSelect: "none",
+      }}
     >
-      {shouldUseYouTube ? (
-        <div style={{ position: 'relative', width: '100%', height: '100%', background: '#000' }}>
-          {inView && youtubePlayerSrc ? (
-            <iframe
-              src={youtubePlayerSrc}
-              title={video.title}
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              loading="lazy"
-              style={{ width: '100%', height: '100%', border: 0 }}
-            />
-          ) : (
-            // placeholder div keeps layout until iframe loads
-            <div style={{ width: '100%', height: '100%', background: '#000' }} />
-          )}
-          <button
-            type="button"
-            onClick={toggleYouTubeMute}
-            aria-label={isMuted ? 'Unmute video' : 'Mute video'}
-            className="work-preview-audio"
-            style={{
-              position: 'absolute',
-              top: 14,
-              right: 14,
-              zIndex: 4,
-            }}
-          >
-            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-          </button>
-        </div>
-      ) : (
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          aspectRatio: "3 / 4",
+          background: "#000",
+          overflow: "hidden",
+        }}
+      >
+        {/* HTML5 Video Element */}
         <video
           ref={videoRef}
-          src={undefined}
-          data-src={video.src}
+          src={inView ? video.src : undefined}
           poster={video.poster}
           muted={isMuted}
-          autoPlay={inView}
           loop
-          controls={false}
           playsInline
-          preload={inView ? 'metadata' : 'none'}
+          preload="metadata"
+          onLoadedData={() => setIsLoading(false)}
+          onWaiting={() => setIsLoading(true)}
+          onPlaying={() => {
+            setIsLoading(false);
+            setIsPlaying(true);
+          }}
+          onPause={() => setIsPlaying(false)}
           onError={() => {
-            if (loadedSrc && loadedSrc !== video.src) {
-              setLoadedSrc(video.src);
-            }
+            setIsLoading(false);
+            console.error("Unable to load video source:", video.src);
           }}
-          onVolumeChange={() => {
-            if (videoRef.current) {
-              setIsMuted(videoRef.current.muted);
-            }
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+            background: "#000",
+            cursor: "pointer",
           }}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        >
-          {/* sources will be attached programmatically based on loadedSrc and available variants */}
-        </video>
-      )}
+          onClick={togglePlay}
+        />
 
-      {!shouldUseYouTube && (
-        <>
+        {/* Gradient Overlay for controls visibility */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.2) 100%)",
+            pointerEvents: "none",
+            zIndex: 2,
+          }}
+        />
+
+        {/* Video Title Overlay */}
+        {video.title && (
+          <div
+            style={{
+              position: "absolute",
+              top: 16,
+              left: 16,
+              right: 16,
+              zIndex: 10,
+              pointerEvents: "none",
+            }}
+          >
+            <h3
+              style={{
+                color: "#ffffff",
+                fontSize: "1rem",
+                fontWeight: 600,
+                margin: 0,
+                textShadow: "0 2px 4px rgba(0,0,0,0.6)",
+              }}
+            >
+              {video.title}
+            </h3>
+          </div>
+        )}
+
+        {/* Loading Spinner */}
+        {isLoading && inView && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0, 0, 0, 0.3)",
+              pointerEvents: "none",
+              zIndex: 5,
+            }}
+          >
+            <span
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                border: "3px solid rgba(255,255,255,0.2)",
+                borderTopColor: "#00b4d8",
+                animation: "videoSpinner 0.8s linear infinite",
+              }}
+            />
+          </div>
+        )}
+
+        {/* Controls Overlay Bar */}
+        <div
+          style={{
+            position: "absolute",
+            left: 12,
+            right: 12,
+            bottom: 12,
+            zIndex: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          {/* Play / Pause Button */}
+          <button
+            type="button"
+            onClick={togglePlay}
+            aria-label={isPlaying ? "Pause video" : "Play video"}
+            style={{
+              width: 38,
+              height: 38,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: "rgba(0,0,0,0.75)",
+              color: "#fff",
+              cursor: "pointer",
+              backdropFilter: "blur(10px)",
+              transition: "all 0.2s ease",
+            }}
+          >
+            {isPlaying ? <Pause size={17} strokeWidth={2} /> : <Play size={17} strokeWidth={2} />}
+          </button>
+
+          {/* Mute / Unmute Button */}
           <button
             type="button"
             onClick={toggleMute}
-            aria-label={isMuted ? 'Unmute video' : 'Mute video'}
-            className="work-preview-audio"
+            aria-label={isMuted ? "Unmute video" : "Mute video"}
+            aria-pressed={!isMuted}
             style={{
-              position: 'absolute',
-              top: 14,
-              right: 14,
-              zIndex: 4,
+              width: 38,
+              height: 38,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 10,
+              border: "1px solid rgba(255,255,255,0.15)",
+              background: isMuted ? "rgba(0,0,0,0.75)" : "#00b4d8",
+              color: "#fff",
+              cursor: "pointer",
+              backdropFilter: "blur(10px)",
+              transition: "all 0.2s ease",
             }}
           >
-            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            {isMuted ? <VolumeX size={18} strokeWidth={1.8} /> : <Volume2 size={18} strokeWidth={1.8} />}
           </button>
 
-          <div style={{ position: 'absolute', top: 14, right: 64, zIndex: 5, display: 'flex', gap: 6 }}>
-            <select
-              aria-label="Quality"
-              value={quality}
-              onChange={(e) => setQuality(e.target.value as any)}
-              style={{ padding: '6px 8px', borderRadius: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }}
-            >
-              <option value="auto">Auto</option>
-              <option value="low">Low</option>
-              <option value="med">Med</option>
-              <option value="high">High</option>
-              {video.hlsSrc && <option value="hls">HLS</option>}
-            </select>
-          </div>
-        </>
-      )}
+          {/* Interactive Volume Slider */}
+          {!isMuted && (
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={volume}
+              onChange={handleVolumeChange}
+              onClick={(e) => e.stopPropagation()}
+              aria-label="Video volume"
+              style={{
+                width: 70,
+                accentColor: "#00b4d8",
+                cursor: "pointer",
+              }}
+            />
+          )}
+        </div>
+      </div>
 
+      <style jsx global>{`
+        @keyframes videoSpinner {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </div>
   );
 }

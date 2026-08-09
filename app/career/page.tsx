@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail } from 'lucide-react';
+import { Mail, Upload, CheckCircle2, Loader2 } from 'lucide-react';
 
 type FormState = {
   name: string;
@@ -36,7 +36,6 @@ export default function CareerPage() {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // strip data:<mime>;base64, prefix if present
       const base64 = result.split(',')[1] ?? result;
       setPortfolioBase64(base64);
     };
@@ -51,12 +50,12 @@ export default function CareerPage() {
     setError(null);
 
     if (!form.name || !form.email || !form.role) {
-      setError('Please fill name, email and the role you are applying for.');
+      setError('Please fill in your name, email, and target role.');
       return;
     }
 
     if (!portfolioBase64 || !portfolioName) {
-      setError('Please upload your portfolio file (PDF, ZIP, or sample).');
+      setError('Please upload your portfolio file (PDF, ZIP, or video sample).');
       return;
     }
 
@@ -87,7 +86,6 @@ export default function CareerPage() {
 
       const data = await res.json();
       setSubmittedResult({ applicationId: data.applicationId || applicationId });
-      // clear form but keep result
       setForm({ name: '', email: '', linkedin: '', location: '', role: '' });
       setPortfolioName(null);
       setPortfolioBase64(null);
@@ -99,108 +97,125 @@ export default function CareerPage() {
   }
 
   return (
-    <main className="selected-hero" style={{ padding: '48px 0' }}>
-      <section className="container" style={{ maxWidth: 980, margin: '0 auto' }}>
+    <main className="selected-hero">
+      <section className="container" style={{ maxWidth: 860 }}>
         {!submittedResult ? (
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.36 }}
-            style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 16,
-              padding: 28,
-              boxShadow: 'var(--shadow)'
-            }}
+            className="call-form"
           >
-            <header style={{ marginBottom: 18 }}>
-              <h1 style={{ margin: 0, fontSize: 28 }}>Join Elevar — Build content that converts</h1>
-              <p style={{ marginTop: 8, color: 'var(--muted)' }}>
+            <div className="section-heading" style={{ marginBottom: 28 }}>
+              <span className="eyebrow">Join The Team</span>
+              <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginTop: 12 }}>
+                Build content that <span>converts</span>
+              </h1>
+              <p style={{ marginTop: 8 }}>
                 We're a small, fast team building content systems for founders. If you ship great work, care about
                 storytelling, and love measurable impact — we'd love to see your portfolio.
               </p>
-            </header>
+            </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <input
-                  name="name"
-                  placeholder="Full name"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                  className="input"
-                />
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="Email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                  className="input"
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <input
-                  name="role"
-                  placeholder="Role you're applying for (e.g., Video Editor)"
-                  value={form.role}
-                  onChange={handleChange}
-                  required
-                  className="input"
-                />
-                <input
-                  name="linkedin"
-                  placeholder="LinkedIn profile (optional)"
-                  value={form.linkedin}
-                  onChange={handleChange}
-                  className="input"
-                />
-              </div>
-
-              <input
-                name="location"
-                placeholder="Location (city, timezone)"
-                value={form.location}
-                onChange={handleChange}
-                className="input"
-              />
-
-              <label style={{ display: 'block', marginTop: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <strong>Portfolio file</strong>
-                  <span style={{ color: 'var(--muted)', fontSize: 13 }}>{portfolioName || 'No file chosen'}</span>
+            <form onSubmit={handleSubmit} className="form-grid">
+              <div className="form-row">
+                <div className="field">
+                  <label htmlFor="name">Full Name *</label>
+                  <input
+                    id="name"
+                    name="name"
+                    placeholder="John Doe"
+                    value={form.name}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
-                <input type="file" accept=".pdf,.zip,application/pdf,video/*,image/*" onChange={handleFile} />
-                <small style={{ color: 'var(--muted)' }}>
-                  Upload a PDF, ZIP, or a sample video file (max ~50MB). The file will be attached to your application
-                  and emailed to our hiring team.
-                </small>
-              </label>
+                <div className="field">
+                  <label htmlFor="email">Email Address *</label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={form.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
 
-              {error && <div style={{ color: 'var(--danger)', marginTop: 4 }}>{error}</div>}
+              <div className="form-row">
+                <div className="field">
+                  <label htmlFor="role">Target Role *</label>
+                  <input
+                    id="role"
+                    name="role"
+                    placeholder="e.g. Video Editor / Motion Designer"
+                    value={form.role}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor="linkedin">LinkedIn Profile</label>
+                  <input
+                    id="linkedin"
+                    name="linkedin"
+                    placeholder="https://linkedin.com/in/username"
+                    value={form.linkedin}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
 
-              <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                <button type="submit" className="btn btn-primary" disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  {loading ? 'Sending...' : 'Submit application'}
+              <div className="field">
+                <label htmlFor="location">Location</label>
+                <input
+                  id="location"
+                  name="location"
+                  placeholder="City, Country (e.g. Chennai, IST)"
+                  value={form.location}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="field">
+                <label>Portfolio File *</label>
+                <div className="queue-note" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: 10 }}>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--text)' }}>
+                      {portfolioName ? `Selected: ${portfolioName}` : 'Upload PDF, ZIP, or video sample'}
+                    </span>
+                    <label className="btn btn-secondary compact" style={{ cursor: 'pointer', margin: 0 }}>
+                      <Upload size={14} />
+                      <span>Browse File</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.zip,application/pdf,video/*,image/*"
+                        onChange={handleFile}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div style={{ color: '#ff4d4d', fontSize: '0.85rem', marginTop: 4 }}>
+                  {error}
+                </div>
+              )}
+
+              <div style={{ marginTop: 12 }}>
+                <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
+                  {loading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Sending Application...
+                    </>
+                  ) : (
+                    'Submit Application'
+                  )}
                 </button>
-
-                <a
-                  className="btn"
-                  href={`https://mail.google.com/mail/?view=cm&fs=1&to=elevardigitalstudio@gmail.com&su=${encodeURIComponent(
-                    `Career Application - ${form.name || 'Applicant'} (${form.role || 'Role'})`
-                  )}&body=${encodeURIComponent(
-                    `Hi Elevar Team,\n\nI am applying for ${form.role || 'a role'}.\n\nName: ${form.name}\nEmail: ${form.email}\nLinkedIn: ${form.linkedin}\nLocation: ${form.location}\n\nPortfolio: (attached or use this link)\n\nBest,\n${form.name}`
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
-                >
-                  <Mail size={14} /> Open & Send via Gmail
-                </a>
               </div>
             </form>
           </motion.div>
@@ -208,30 +223,20 @@ export default function CareerPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            style={{
-              maxWidth: 760,
-              margin: '0 auto',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 16,
-              padding: 28,
-              textAlign: 'center',
-              boxShadow: 'var(--shadow)'
-            }}
+            className="call-form"
+            style={{ textAlign: 'center', padding: '48px 28px' }}
           >
-            <h2 style={{ marginTop: 0 }}>Thanks — your application was sent</h2>
-            <p style={{ color: 'var(--muted)' }}>
-              We've received your application. Your application ID is <strong>{submittedResult.applicationId}</strong>.
-              Our hiring team will review your submission and reach out if there's a match.
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: 'var(--primary)' }}>
+              <CheckCircle2 size={48} />
+            </div>
+            <h2 style={{ margin: '0 0 12px 0', fontSize: '1.8rem' }}>Application Submitted!</h2>
+            <p style={{ color: 'var(--muted)', maxWidth: 560, margin: '0 auto 24px', lineHeight: 1.6 }}>
+              Your application and portfolio have been automatically delivered to our inbox. Reference ID: <strong style={{ color: 'var(--text)' }}>{submittedResult.applicationId}</strong>.
             </p>
 
-            <div style={{ marginTop: 16 }}>
-              <a
-                href="mailto:elevardigitalstudio@gmail.com"
-                className="btn btn-primary"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
-              >
-                <Mail size={14} /> Contact the hiring team
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <a href="mailto:elevardigitalstudio@gmail.com" className="btn btn-primary">
+                <Mail size={14} /> Contact Hiring Team
               </a>
             </div>
           </motion.div>
