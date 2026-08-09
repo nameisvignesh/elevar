@@ -37,7 +37,11 @@
 ### Mobile
 
 <p align="center">
-  <img src="./docs/screenshots/mobile.png" alt="Elevar Mobile Preview">
+  <img src="./docs/screenshots/mobile1.png" alt="Elevar Mobile Preview">
+</p>
+
+<p align="center">
+  <img src="./docs/screenshots/mobile2.png" alt="Elevar Mobile Preview">
 </p>
 
 ---
