@@ -3,6 +3,7 @@
 const repo = "";
 
 const nextConfig = {
+  output: "export",
   basePath: repo,
   assetPrefix: repo,
   images: {
