@@ -36,14 +36,16 @@
 
 ### Mobile
 
-<p align="center">
-  <img src="./docs/screenshots/mobile1.png" alt="Elevar Mobile Preview">
-</p>
-
-<p align="center">
-  <img src="./docs/screenshots/mobile2.png" alt="Elevar Mobile Preview">
-</p>
-
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="./docs/screenshots/mobile1.png" alt="Elevar Mobile Preview" width="300">
+    </td>
+    <td align="center">
+      <img src="./docs/screenshots/mobile2.png" alt="Elevar Mobile Preview" width="300">
+    </td>
+  </tr>
+</table>
 ---
 
 # 📖 About
