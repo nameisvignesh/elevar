@@ -333,6 +333,7 @@ export default function Home() {
                 >
                   <div className="process-icon">
                     <Icon
+                      color="#0077b6"
                       size={24}
                       strokeWidth={1.8}
                     />
@@ -380,11 +381,10 @@ export default function Home() {
 
               const card = (
                 <article
-                  className={`service-card tilt-card ${
-                    service.custom
+                  className={`service-card tilt-card ${service.custom
                       ? 'featured'
                       : ''
-                  }`}
+                    }`}
                 >
                   <Icon
                     color="#0077b6"
