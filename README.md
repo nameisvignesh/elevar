@@ -34,7 +34,7 @@
 
 ### Mobile
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![Elevar Mobile Preview](./docs/screenshots/mobile.png)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![Elevar Mobile Preview](./docs/screenshots/mobile.png)
 
 
 ---
