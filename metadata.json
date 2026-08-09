@@ -1,0 +1,8 @@
+{
+  "name": "Elevar Studio",
+  "description": "Strategic content engines for personal brand growth and elevation",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "elevar",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000 -H 0.0.0.0",
+    "transcode:example": "node ./scripts/transcode.js input.mp4 output-base",
+    "build": "next build",
+    "start": "next start",
+    "export": "next build",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.6.1",
+    "cloudinary": "^2.10.0",
+    "framer-motion": "^11.11.9",
+    "googleapis": "^131.0.0",
+    "hls.js": "^1.4.0",
+    "lucide-react": "^0.468.0",
+    "next": "14.2.15",
+    "next-themes": "^0.4.1",
+    "nodemailer": "^9.0.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/nodemailer": "^8.0.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "ffmpeg-static": "^5.3.0",
+    "typescript": "^5.6.3"
+  },
+  "allowScripts": {
+    "ffmpeg-static@5.3.0": true
+  }
+}
