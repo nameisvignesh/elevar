@@ -30,12 +30,15 @@
 
 ### Desktop
 
-![Elevar Desktop Preview](./docs/screenshots/desktop.png)
+<p align="center">
+  <img src="./docs/screenshots/desktop.png" alt="Elevar Desktop Preview">
+</p>
 
 ### Mobile
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![Elevar Mobile Preview](./docs/screenshots/mobile.png)
-
+<p align="center">
+  <img src="./docs/screenshots/mobile.png" alt="Elevar Mobile Preview">
+</p>
 
 ---
 
