@@ -24,6 +24,19 @@
   </a>
 </p>
 
+--- 
+
+## 🖥️ Website Preview
+
+### Desktop
+
+![Elevar Desktop Preview](./docs/screenshots/desktop.png)
+
+### Mobile
+
+![Elevar Mobile Preview](./docs/screenshots/mobile.png)
+
+
 ---
 
 # 📖 About
