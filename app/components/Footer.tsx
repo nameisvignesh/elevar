@@ -92,7 +92,7 @@ export default function Footer() {
               }}
             >
               <Phone size={14} />
-              +91 9790897877
+              +91 93632 92824
             </a>
           </div>
         </div>
