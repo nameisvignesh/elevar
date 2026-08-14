@@ -1,7 +1,6 @@
 'use client';
 
 import { BadgeCheck } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 
 const testimonials = [
   {
@@ -22,53 +21,32 @@ const testimonials = [
 ];
 
 export default function TestimonialMarquee() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.unobserve(entry.target);
-        }
-      },
-      {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.2,
-      }
-    );
-
-    observer.observe(section);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
-
   return (
-    <section className="testimonial-section" ref={sectionRef}>
+    <section className="testimonial-section">
+      {/* Square pattern background */}
+      <div className="testimonial-pattern" aria-hidden="true" />
+
       <div className="container">
         <div className="section-heading centered">
           <h2>What Our Partners Say</h2>
         </div>
+      </div>
 
-        <div className="testimonial-grid">
+      {/* Single pass marquee — pauses on hover */}
+      <div className="testimonial-marquee">
+        <div className="testimonial-marquee-track">
           {testimonials.map((testimonial) => (
-            <div 
-              key={testimonial.id} 
-              className={`testimonial-card tilt-card ${inView ? 'in-view' : ''}`}
+            <div
+              key={testimonial.id}
+              className="testimonial-card tilt-card"
             >
-              <p>"{testimonial.text}"</p>
-              <div>
-                <BadgeCheck size={18} />
-                <span>{testimonial.company}</span>
+              <div className="testimonial-header">
+                <div className="testimonial-meta">
+                  <BadgeCheck size={16} />
+                  <span>{testimonial.company}</span>
+                </div>
               </div>
+              <p>"{testimonial.text}"</p>
             </div>
           ))}
         </div>

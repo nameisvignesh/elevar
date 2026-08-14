@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root,
 html.dark {
   color-scheme: dark;
@@ -96,6 +100,26 @@ html.light {
   box-shadow: none;
 }
 
+/* shadcn Button replacement for the nav CTA keeps the same ghost look */
+.book-call-nav {
+  background: transparent;
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  box-shadow: none;
+}
+
+.book-call-nav:hover {
+  background: var(--primary);
+  color: var(--btn-primary-text);
+  border-color: var(--primary);
+  box-shadow: 0 10px 24px var(--primary-glow);
+}
+
+/* shadcn Button for form submits keeps the site's white-on-teal .btn-primary */
+.btn-elevar {
+  color: #fff !important;
+}
+
 .book-call:hover {
   background: var(--primary) !important;
   color: var(--btn-primary-text);
@@ -163,6 +187,38 @@ body {
 body::selection {
   background: var(--turquoise-surf);
   color: var(--btn-primary-text);
+}
+
+/* =========================================================
+   GRAIN OVERLAY (inline SVG turbulence — no external file)
+========================================================= */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  mix-blend-mode: overlay;
+}
+
+/* =========================================================
+   SMOOTH THEME SWITCH
+   `.theme-transition` is added to <html> only while the theme
+   flips so existing per-element transitions are not overridden.
+========================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-transition,
+  html.theme-transition * {
+    transition:
+      background-color 0.35s ease,
+      color 0.35s ease,
+      border-color 0.35s ease,
+      box-shadow 0.35s ease,
+      fill 0.35s ease !important;
+  }
 }
 
 a {
@@ -391,10 +447,28 @@ video {
 .hero-full .grain {
   position: absolute;
   inset: 0;
-  background-image: url("/noise.png");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
   opacity: 0.06;
   mix-blend-mode: overlay;
   z-index: 1;
+}
+
+/* =========================================================
+   GLOBAL GRAIN BACKGROUND
+   Inline SVG turbulence noise (no external file needed) laid
+   over the whole page for a tactile, film-like finish.
+========================================================= */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
 }
 
 .hero-content {
@@ -416,11 +490,33 @@ video {
   margin-right: auto;
 }
 
+.hero-section {
+  position: relative;
+  overflow: hidden;
+}
+
 .hero-detail-grid {
   display: grid;
   grid-template-columns: 1fr 420px;
   gap: 22px;
   align-items: start;
+  position: relative;
+  z-index: 1;
+}
+
+/* Three.js background scene (client-only, see HeroScene.tsx) */
+.hero-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+@media (max-width: 880px) {
+  .hero-scene {
+    opacity: 0.3;
+  }
 }
 
 .hero-copy.small {
@@ -758,17 +854,38 @@ video {
 }
 
 .process-card {
+  position: relative;
   padding: 20px;
   min-height: 190px;
 }
 
-.process-card span {
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  font-size: 1.35rem;
-  font-weight: bold;
+/* Numbered step badge (eleken-style) */
+.process-step-num {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  background: var(--surface-2);
+  opacity: 0.92;
+}
+
+/* Dashed connector linking each step to the previous one */
+@media (min-width: 900px) {
+  .process-card:not(:nth-child(4n + 1))::before {
+    content: "";
+    position: absolute;
+    top: 30px;
+    right: 100%;
+    width: 10px;
+    border-top: 2px dashed var(--border);
+    pointer-events: none;
+  }
 }
 
 .process-card h3 {
@@ -857,7 +974,6 @@ video {
 .work-preview {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 3 / 4;
   width: 100%;
   min-width: 0;
   background: var(--surface-2);
@@ -1091,77 +1207,67 @@ TESTIMONIAL HORIZONTAL SCROLL
 .testimonial-section {
   background: var(--bg-deep);
   padding: 68px 0;
+  overflow: hidden;
+  position: relative;
 }
 
-.testimonial-grid {
+/* Square pattern background */
+.testimonial-pattern {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M0 0h40v40H0z' fill='none' stroke='%2300b4d8' stroke-width='0.5'/%3E%3C/svg%3E");
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.testimonial-section .container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Single pass marquee — pauses on hover */
+.testimonial-marquee {
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+  padding: 12px 0 28px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+
+.testimonial-marquee-track {
   display: flex;
   gap: 24px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  padding: 12px 4px 24px 4px;
-  width: 100%;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+  will-change: transform;
+}
 
-  /* Hide scrollbar for Chrome, Safari, and Opera */
-  &::-webkit-scrollbar {
-    display: none;
+.testimonial-marquee:hover .testimonial-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testimonial-marquee-track {
+    animation: none;
   }
-
-  /* Hide scrollbar for Firefox, IE, and Edge */
-  scrollbar-width: none;     /* Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
-}
-
-.testimonial-grid::-webkit-scrollbar {
-  height: 6px;
-}
-
-.testimonial-grid::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.testimonial-grid::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 999px;
-}
-
-.testimonial-grid::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
 }
 
 .testimonial-card {
-  /* Ensure each card takes up a fixed width while scrolling */
-  flex: 0 0 clamp(300px, 80vw, 480px);
-  scroll-snap-align: start; /* Snaps cards neatly into place */
-  padding: 32px;
+  flex: 0 0 clamp(300px, 80vw, 420px);
+  padding: 28px;
   border: 1px solid var(--border);
   background: var(--card);
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: var(--shadow);
   transition:
     transform 0.28s ease,
     border-color 0.28s ease,
     box-shadow 0.28s ease;
-  opacity: 0;
-  animation: slideInUp 0.6s ease forwards;
-}
-
-.testimonial-card:nth-child(1) {
-  animation-delay: 0.1s;
-}
-
-.testimonial-card:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.testimonial-card:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-.testimonial-card.in-view {
-  animation: slideInUp 0.6s ease forwards;
+  display: flex;
+  flex-direction: column;
 }
 
 .testimonial-card:hover {
@@ -1169,20 +1275,27 @@ TESTIMONIAL HORIZONTAL SCROLL
   border-color: var(--primary);
 }
 
-.testimonial-card p {
-  line-height: 1.68;
-  margin: 0 0 24px;
-  color: var(--text);
-  font-size: 0.95rem;
-}
-
-.testimonial-card div {
+.testimonial-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.testimonial-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: var(--primary);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
+}
+
+.testimonial-card p {
+  line-height: 1.68;
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  flex: 1;
 }
 
 .cta-band {
@@ -1590,7 +1703,4 @@ TESTIMONIAL HORIZONTAL SCROLL
     gap: 12px;
   }
 
-  .work-preview {
-    aspect-ratio: 3 / 4;
-  }
 }

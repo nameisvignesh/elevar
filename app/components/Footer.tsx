@@ -1,16 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { 
-  Mail, 
-  Phone, 
-  FolderOpen, 
-  Zap, 
-  GitBranch, 
+import {
+  Mail,
+  Phone,
+  FolderOpen,
+  Zap,
+  GitBranch,
   Users,
   Layers,
-  Calendar,
-  Download
+  Calendar
 } from 'lucide-react';
 
 export default function Footer() {
@@ -38,15 +37,15 @@ export default function Footer() {
               <FolderOpen size={14} />
               Selected Work
             </Link>
-            <Link href="#services" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Link href="/#services" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Zap size={14} />
               Services
             </Link>
-            <Link href="#process" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Link href="/#process" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <GitBranch size={14} />
               Process
             </Link>
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Link href="/career" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Users size={14} />
               Career
             </Link>
@@ -63,9 +62,9 @@ export default function Footer() {
               <Calendar size={14} />
               Book a Call
             </Link>
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Download size={14} />
-              Install App
+            <Link href="/#services" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Zap size={14} />
+              Services
             </Link>
           </div>
 

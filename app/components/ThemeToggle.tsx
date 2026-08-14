@@ -22,10 +22,17 @@ export function ThemeToggle() {
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    const root = document.documentElement;
+
+    // Enable the global smooth transition only during the flip so it
+    // doesn't fight element-specific transitions the rest of the time.
+    root.classList.add('theme-transition');
+    window.setTimeout(() => root.classList.remove('theme-transition'), 450);
+
     setTheme(nextTheme);
     localStorage.setItem('elevar-theme', nextTheme);
-    document.documentElement.classList.remove('dark', 'light');
-    document.documentElement.classList.add(nextTheme);
+    root.classList.remove('dark', 'light');
+    root.classList.add(nextTheme);
   };
 
   return (

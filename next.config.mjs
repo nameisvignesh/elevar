@@ -1,11 +1,14 @@
 /** @type {import('next').NextConfig} */
 
-const repo = "";
+// GitHub Pages project site lives under /elevar. In dev the basePath is empty.
+const repo = "elevar";
+const isProd = process.env.NODE_ENV === "production";
 
 const nextConfig = {
   output: "export",
-  basePath: repo,
-  assetPrefix: repo,
+  basePath: isProd ? `/${repo}` : "",
+  assetPrefix: isProd ? `/${repo}` : "",
+  trailingSlash: true,
   images: {
     unoptimized: true,
   },

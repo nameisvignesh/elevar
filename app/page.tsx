@@ -35,8 +35,15 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import dynamic from 'next/dynamic';
 
 import { CustomBundleButton } from './components/CustomBundleButton';
+import { withBasePath } from '@/lib/paths';
+
+const HeroScene = dynamic(() => import('./components/HeroScene'), {
+  ssr: false,
+  loading: () => null,
+});
 
 /* =========================================================
    TYPES
@@ -148,27 +155,27 @@ const services: Service[] = [
 ];
 
 /* =========================================================
-   VERCEL BLOB VIDEOS
+   PORTFOLIO VIDEOS (local /public files, portrait 9:16 reels)
 ========================================================= */
 
 const work: WorkVideoItem[] = [
   {
     id: 'video-1',
     title: '',
-    src: 'https://xiniunszguqd8c4n.public.blob.vercel-storage.com/family-friend.mp4',
-    poster: '/logo.svg',
+    src: withBasePath('/family-friend.mp4'),
+    poster: withBasePath('/logo.svg'),
   },
   {
     id: 'video-2',
     title: '',
-    src: 'https://xiniunszguqd8c4n.public.blob.vercel-storage.com/final-out-tiles.mp4',
-    poster: '/logo.svg',
+    src: withBasePath('/final-out-tiles.mp4'),
+    poster: withBasePath('/logo.svg'),
   },
   {
     id: 'video-3',
     title: '',
-    src: 'https://xiniunszguqd8c4n.public.blob.vercel-storage.com/nanotiles.mp4',
-    poster: '/logo.svg',
+    src: withBasePath('/nanotiles.mp4'),
+    poster: withBasePath('/logo.svg'),
   },
 ];
 
@@ -184,6 +191,8 @@ export default function Home() {
       ===================================================== */}
 
       <section className="hero-section">
+        <HeroScene />
+
         <div className="container hero-details">
           <div className="hero-detail-grid">
             {/* HERO COPY */}
@@ -323,7 +332,7 @@ export default function Home() {
           </div>
 
           <div className="process-grid">
-            {processSteps.map((step) => {
+            {processSteps.map((step, index) => {
               const Icon = step.icon;
 
               return (
@@ -331,6 +340,10 @@ export default function Home() {
                   className="process-card tilt-card"
                   key={step.title}
                 >
+                  <span className="process-step-num">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+
                   <div className="process-icon">
                     <Icon
                       color="#0077b6"
@@ -466,7 +479,6 @@ export default function Home() {
                 className="work-preview tilt-card"
                 style={{
                   position: 'relative',
-                  aspectRatio: '3 / 4',
                   overflow: 'hidden',
                 }}
               >
@@ -500,7 +512,7 @@ export default function Home() {
           <div className="founder-card">
             <div className="founder-photo">
               <Image
-                src="/founder.jpeg"
+                src={withBasePath("/founder.jpeg")}
                 alt="Karthikeyan K, Founder and CEO"
                 fill
                 sizes="(max-width: 900px) 100vw, 420px"
@@ -634,6 +646,9 @@ function WorkPreviewVideo({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [volume, setVolume] = useState(1);
+  /* Derived from the video's intrinsic dimensions so the card renders in
+     its original ratio (no cropping). */
+  const [aspectRatio, setAspectRatio] = useState('16 / 9');
 
   /* Force DOM sync for muted property */
   useEffect(() => {
@@ -776,7 +791,7 @@ function WorkPreviewVideo({
       style={{
         position: 'relative',
         width: '100%',
-        height: '100%',
+        aspectRatio,
         overflow: 'hidden',
         background: '#000',
         borderRadius: 'inherit',
@@ -787,7 +802,7 @@ function WorkPreviewVideo({
       <video
         ref={videoRef}
         src={inView ? item.src : undefined}
-        poster={item.poster}
+        poster={withBasePath(item.poster)}
         muted={isMuted}
         loop
         playsInline
@@ -798,6 +813,10 @@ function WorkPreviewVideo({
 
           video.muted = isMuted;
           video.volume = volume;
+
+          if (video.videoWidth && video.videoHeight) {
+            setAspectRatio(`${video.videoWidth} / ${video.videoHeight}`);
+          }
 
           if (inView) playVideo();
         }}

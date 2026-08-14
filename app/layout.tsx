@@ -18,6 +18,7 @@ import {
 import './globals.css';
 import { Navigation } from './components/Navigation';
 import { ChatbotButton } from './components/ChatbotButton';
+import { withBasePath } from '@/lib/paths';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -30,11 +31,10 @@ export const metadata: Metadata = {
   title: 'Elevar - Personal Brand Growth',
   description:
     'Strategic content engines for personal brand elevation',
-  manifest: '/manifest.webmanifest',
   icons: {
-    icon: '/logo.svg',
-    shortcut: '/logo.svg',
-    apple: '/logo.svg',
+    icon: withBasePath('/logo.svg'),
+    shortcut: withBasePath('/logo.svg'),
+    apple: withBasePath('/logo.svg'),
   },
 };
 
@@ -56,6 +56,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* metadata.manifest is not basePath-aware in Next 14 — link manually */}
+        <link rel="manifest" href={withBasePath('/manifest.webmanifest')} />
         <script
           dangerouslySetInnerHTML={{
             __html: `

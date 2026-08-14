@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Volume2, VolumeX, ArrowLeft, Play, Pause } from "lucide-react";
+import { withBasePath } from "@/lib/paths";
 
 type VideoItem = {
   id: string;
@@ -15,19 +16,19 @@ const videos: VideoItem[] = [
   {
     id: "video-1",
     title: "Family Friend",
-    src: "https://xiniunszguqd8c4n.public.blob.vercel-storage.com/family-friend.mp4",
+    src: withBasePath("/family-friend.mp4"),
     poster: "/logo.svg",
   },
   {
     id: "video-2",
     title: "Final Out Tiles",
-    src: "https://xiniunszguqd8c4n.public.blob.vercel-storage.com/final-out-tiles.mp4",
+    src: withBasePath("/final-out-tiles.mp4"),
     poster: "/logo.svg",
   },
   {
     id: "video-3",
     title: "Nano Tiles",
-    src: "https://xiniunszguqd8c4n.public.blob.vercel-storage.com/nanotiles.mp4",
+    src: withBasePath("/nanotiles.mp4"),
     poster: "/logo.svg",
   },
 ];
@@ -104,6 +105,9 @@ function VideoCard({ video }: { video: VideoItem }) {
   const [isMuted, setIsMuted] = useState(true);
   const [volume, setVolume] = useState(0.8);
   const [isLoading, setIsLoading] = useState(true);
+  /* Aspect ratio is derived from the video's intrinsic dimensions so the
+     card always renders in the original ratio (no cropping). */
+  const [aspectRatio, setAspectRatio] = useState("16 / 9");
 
   /* Observer to detect when video card enters viewport */
   useEffect(() => {
@@ -218,13 +222,14 @@ function VideoCard({ video }: { video: VideoItem }) {
         border: "1px solid rgba(255, 255, 255, 0.08)",
         boxShadow: "0 10px 30px rgba(0, 0, 0, 0.4)",
         userSelect: "none",
+        aspectRatio,
       }}
     >
       <div
         style={{
           position: "relative",
           width: "100%",
-          aspectRatio: "3 / 4",
+          height: "100%",
           background: "#000",
           overflow: "hidden",
         }}
@@ -233,11 +238,17 @@ function VideoCard({ video }: { video: VideoItem }) {
         <video
           ref={videoRef}
           src={inView ? video.src : undefined}
-          poster={video.poster}
+          poster={withBasePath(video.poster)}
           muted={isMuted}
           loop
           playsInline
           preload="metadata"
+          onLoadedMetadata={(e) => {
+            const v = e.currentTarget;
+            if (v.videoWidth && v.videoHeight) {
+              setAspectRatio(`${v.videoWidth} / ${v.videoHeight}`);
+            }
+          }}
           onLoadedData={() => setIsLoading(false)}
           onWaiting={() => setIsLoading(true)}
           onPlaying={() => {

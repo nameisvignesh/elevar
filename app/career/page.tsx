@@ -1,8 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Upload, CheckCircle2, Loader2 } from 'lucide-react';
+import {
+  isCareerEmailConfigured,
+  sendCareerApplication,
+  type EmailJSAttachment,
+} from '@/lib/emailjs';
+import { Button } from '@/components/ui/button';
 
 type FormState = {
   name: string;
@@ -12,6 +18,20 @@ type FormState = {
   role: string;
 };
 
+/** Portfolio files are restricted to PDF, Word docs, or HTML (see WORK.md). */
+const ACCEPTED_EXTENSIONS = ['pdf', 'doc', 'docx', 'html', 'htm'];
+/**
+ * EmailJS free tier has a ~2MB attachment limit, and base64 inflates the file
+ * by ~33%, so cap the raw file at 1.5MB to keep the payload under the limit.
+ */
+const MAX_PORTFOLIO_BYTES = 1.5 * 1024 * 1024;
+
+function getExtension(filename: string): string {
+  const idx = filename.lastIndexOf('.');
+  if (idx === -1) return '';
+  return filename.slice(idx + 1).toLowerCase();
+}
+
 export default function CareerPage() {
   const [form, setForm] = useState<FormState>({ name: '', email: '', linkedin: '', location: '', role: '' });
   const [portfolioName, setPortfolioName] = useState<string | null>(null);
@@ -19,6 +39,10 @@ export default function CareerPage() {
   const [loading, setLoading] = useState(false);
   const [submittedResult, setSubmittedResult] = useState<{ applicationId: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  /* Guards against stale FileReader callbacks and duplicate submits. */
+  const fileReadId = useRef(0);
+  const submittingRef = useRef(false);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
@@ -32,14 +56,36 @@ export default function CareerPage() {
       setPortfolioBase64(null);
       return;
     }
+
+    const ext = getExtension(file.name);
+    if (!ACCEPTED_EXTENSIONS.includes(ext)) {
+      setPortfolioName(null);
+      setPortfolioBase64(null);
+      setError('Only PDF, Word (.doc/.docx), or HTML files are accepted for your portfolio.');
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > MAX_PORTFOLIO_BYTES) {
+      setPortfolioName(null);
+      setPortfolioBase64(null);
+      setError('Portfolio file must be under 1.5MB. Compress it, or email it directly to elevardigitalstudio@gmail.com.');
+      e.target.value = '';
+      return;
+    }
+
+    setError(null);
     setPortfolioName(file.name);
     const reader = new FileReader();
+    const readId = ++fileReadId.current;
     reader.onload = () => {
+      if (fileReadId.current !== readId) return; // a newer file was selected since
       const result = reader.result as string;
       const base64 = result.split(',')[1] ?? result;
       setPortfolioBase64(base64);
     };
     reader.onerror = () => {
+      if (fileReadId.current !== readId) return;
       setError('Failed to read the file. Try again.');
     };
     reader.readAsDataURL(file);
@@ -55,46 +101,64 @@ export default function CareerPage() {
     }
 
     if (!portfolioBase64 || !portfolioName) {
-      setError('Please upload your portfolio file (PDF, ZIP, or video sample).');
+      setError('Please upload your portfolio file (PDF, DOC/DOCX, or HTML).');
       return;
     }
 
+    if (!isCareerEmailConfigured()) {
+      setError('Email is not configured yet. Please email your application to elevardigitalstudio@gmail.com.');
+      return;
+    }
+
+    if (submittingRef.current) return; // ignore duplicate rapid clicks
+    submittingRef.current = true;
     setLoading(true);
 
     const applicationId = `ELV-CAREER-${Date.now().toString(36).toUpperCase().slice(-8)}`;
 
     try {
-      const res = await fetch('/api/career', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
+      const attachment: EmailJSAttachment = {
+        name: portfolioName,
+        data: portfolioBase64,
+      };
+
+      await sendCareerApplication(
+        {
+          from_name: form.name,
+          from_email: form.email,
+          reply_to: form.email,
+          role: form.role,
           linkedin: form.linkedin,
           location: form.location,
-          role: form.role,
-          portfolioName,
-          portfolioBase64,
-          applicationId
-        })
-      });
+          application_id: applicationId,
+          portfolio_name: portfolioName,
+          portfolio_note: `Portfolio attached (${portfolioName})`,
+        },
+        attachment
+      );
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.message || 'Server error while sending application.');
-      }
-
-      const data = await res.json();
-      setSubmittedResult({ applicationId: data.applicationId || applicationId });
+      setSubmittedResult({ applicationId });
       setForm({ name: '', email: '', linkedin: '', location: '', role: '' });
       setPortfolioName(null);
       setPortfolioBase64(null);
     } catch (err: any) {
-      setError(err?.message || 'Unexpected error.');
+      const message =
+        err?.text || err?.message || 'Unexpected error while sending the application.';
+      setError(
+        `Application failed to send (${message}). Please email it directly to elevardigitalstudio@gmail.com.`
+      );
     } finally {
       setLoading(false);
+      submittingRef.current = false;
     }
   }
+
+  const mailtoFallback = () =>
+    `mailto:elevardigitalstudio@gmail.com?subject=${encodeURIComponent(
+      `Application for ${form.role || 'role'} - ${form.name || 'Applicant'}`
+    )}&body=${encodeURIComponent(
+      `Hi Elevar Team,\n\nI'd like to apply for the ${form.role || ''} role.\n\nName: ${form.name}\nEmail: ${form.email}\nLinkedIn: ${form.linkedin || 'N/A'}\nLocation: ${form.location || 'N/A'}\nPortfolio: attached separately (PDF/DOC/HTML)\n\nThanks!`
+    )}`;
 
   return (
     <main className="selected-hero">
@@ -112,8 +176,8 @@ export default function CareerPage() {
                 Build content that <span>converts</span>
               </h1>
               <p style={{ marginTop: 8 }}>
-                We're a small, fast team building content systems for founders. If you ship great work, care about
-                storytelling, and love measurable impact — we'd love to see your portfolio.
+                We&apos;re a small, fast team building content systems for founders. If you ship great work, care about
+                storytelling, and love measurable impact — we&apos;d love to see your portfolio.
               </p>
             </div>
 
@@ -180,18 +244,18 @@ export default function CareerPage() {
               </div>
 
               <div className="field">
-                <label>Portfolio File *</label>
+                <label>Portfolio File * (PDF, DOC/DOCX, or HTML)</label>
                 <div className="queue-note" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: 10 }}>
                     <span style={{ fontSize: '0.82rem', color: 'var(--text)' }}>
-                      {portfolioName ? `Selected: ${portfolioName}` : 'Upload PDF, ZIP, or video sample'}
+                      {portfolioName ? `Selected: ${portfolioName}` : 'Upload PDF, Word, or HTML (max 1.5MB)'}
                     </span>
                     <label className="btn btn-secondary compact" style={{ cursor: 'pointer', margin: 0 }}>
                       <Upload size={14} />
                       <span>Browse File</span>
                       <input
                         type="file"
-                        accept=".pdf,.zip,application/pdf,video/*,image/*"
+                        accept=".pdf,.doc,.docx,.html,.htm,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/html"
                         onChange={handleFile}
                         style={{ display: 'none' }}
                       />
@@ -207,7 +271,7 @@ export default function CareerPage() {
               )}
 
               <div style={{ marginTop: 12 }}>
-                <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%' }}>
+                <Button type="submit" size="lg" className="btn-elevar" disabled={loading} style={{ width: '100%' }}>
                   {loading ? (
                     <>
                       <Loader2 size={16} className="animate-spin" /> Sending Application...
@@ -215,8 +279,18 @@ export default function CareerPage() {
                   ) : (
                     'Submit Application'
                   )}
-                </button>
+                </Button>
               </div>
+
+              <p style={{ margin: '12px 0 0', fontSize: '0.82rem', color: 'var(--muted)', textAlign: 'center' }}>
+                Your application is automatically emailed to{' '}
+                <a
+                  href={mailtoFallback()}
+                  style={{ color: 'var(--primary)', textDecoration: 'underline' }}
+                >
+                  elevardigitalstudio@gmail.com
+                </a>
+              </p>
             </form>
           </motion.div>
         ) : (

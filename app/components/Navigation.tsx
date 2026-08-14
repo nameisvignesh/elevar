@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ThemeToggle } from './ThemeToggle';
+import { Button } from '@/components/ui/button';
+import { withBasePath } from '@/lib/paths';
 
 export function Navigation() {
   const pathname = usePathname();
@@ -33,7 +35,7 @@ export function Navigation() {
     <header className="nav-wrap">
       <nav className="container nav">
         <Link href="/" className="brand" onClick={() => setOpen(false)}>
-          <Image src="/logo.svg" alt="Elevar logo" width={40} height={40} className="brand-mark" priority />
+          <Image src={withBasePath("/logo.svg")} alt="Elevar logo" width={40} height={40} className="brand-mark" priority />
           <div>
             <strong style={{
               background: "linear-gradient(90deg, #00b4d8, #90e0ef)",
@@ -43,7 +45,6 @@ export function Navigation() {
             }}>
               Elevar
             </strong>
-            <span className="brand-sub">Content systems for founders</span>
           </div>
         </Link>
 
@@ -66,13 +67,9 @@ export function Navigation() {
               </Link>
             );
           })}
-          <Link
-            href="/book-call"
-            className="btn compact book-call"
-            onClick={() => setOpen(false)}
-          >
-            Book Call
-          </Link>
+          <Button asChild size="sm" className="book-call-nav" onClick={() => setOpen(false)}>
+            <Link href="/book-call">Book Call</Link>
+          </Button>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

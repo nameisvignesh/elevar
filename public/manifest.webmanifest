@@ -2,13 +2,13 @@
   "name": "Elevar",
   "short_name": "Elevar",
   "description": "Elevar personal brand studio",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
-  "background_color": "#f7f2ea",
-  "theme_color": "#bc6c25",
+  "background_color": "#0b0c10",
+  "theme_color": "#00b4d8",
   "icons": [
     {
-      "src": "/logo.svg",
+      "src": "./logo.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }
