@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -27,6 +25,15 @@ export async function POST(request: NextRequest) {
     const base64File = buffer.toString('base64');
 
     // Send email with attachment
+    if (!process.env.RESEND_API_KEY) {
+      console.error('Missing RESEND_API_KEY');
+      return NextResponse.json(
+        { error: 'Email service not configured' },
+        { status: 500 }
+      );
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
     const { data, error } = await resend.emails.send({
       from: 'Elevar Career <onboarding@resend.dev>',
       to: ['elevardigitalstudio@gmail.com'],
