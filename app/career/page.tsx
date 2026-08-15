@@ -2,12 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Upload, CheckCircle2, Loader2 } from 'lucide-react';
-import {
-  isCareerEmailConfigured,
-  sendCareerApplication,
-  type EmailJSAttachment,
-} from '@/lib/emailjs';
+import { Mail, Upload, CheckCircle2, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type FormState = {
@@ -18,13 +13,9 @@ type FormState = {
   role: string;
 };
 
-/** Portfolio files are restricted to PDF, Word docs, or HTML (see WORK.md). */
 const ACCEPTED_EXTENSIONS = ['pdf', 'doc', 'docx', 'html', 'htm'];
-/**
- * EmailJS free tier has a ~2MB attachment limit, and base64 inflates the file
- * by ~33%, so cap the raw file at 1.5MB to keep the payload under the limit.
- */
 const MAX_PORTFOLIO_BYTES = 1.5 * 1024 * 1024;
+const APPLICATION_INBOX = 'elevardigitalstudio@gmail.com';
 
 function getExtension(filename: string): string {
   const idx = filename.lastIndexOf('.');
@@ -34,15 +25,12 @@ function getExtension(filename: string): string {
 
 export default function CareerPage() {
   const [form, setForm] = useState<FormState>({ name: '', email: '', linkedin: '', location: '', role: '' });
+  const [portfolioFile, setPortfolioFile] = useState<File | null>(null);
   const [portfolioName, setPortfolioName] = useState<string | null>(null);
-  const [portfolioBase64, setPortfolioBase64] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [submittedResult, setSubmittedResult] = useState<{ applicationId: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  /* Guards against stale FileReader callbacks and duplicate submits. */
-  const fileReadId = useRef(0);
-  const submittingRef = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
@@ -52,269 +40,250 @@ export default function CareerPage() {
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) {
+      setPortfolioFile(null);
       setPortfolioName(null);
-      setPortfolioBase64(null);
       return;
     }
 
     const ext = getExtension(file.name);
     if (!ACCEPTED_EXTENSIONS.includes(ext)) {
+      setPortfolioFile(null);
       setPortfolioName(null);
-      setPortfolioBase64(null);
       setError('Only PDF, Word (.doc/.docx), or HTML files are accepted for your portfolio.');
-      e.target.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
     if (file.size > MAX_PORTFOLIO_BYTES) {
+      setPortfolioFile(null);
       setPortfolioName(null);
-      setPortfolioBase64(null);
       setError('Portfolio file must be under 1.5MB. Compress it, or email it directly to elevardigitalstudio@gmail.com.');
-      e.target.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
     setError(null);
+    setPortfolioFile(file);
     setPortfolioName(file.name);
-    const reader = new FileReader();
-    const readId = ++fileReadId.current;
-    reader.onload = () => {
-      if (fileReadId.current !== readId) return; // a newer file was selected since
-      const result = reader.result as string;
-      const base64 = result.split(',')[1] ?? result;
-      setPortfolioBase64(base64);
-    };
-    reader.onerror = () => {
-      if (fileReadId.current !== readId) return;
-      setError('Failed to read the file. Try again.');
-    };
-    reader.readAsDataURL(file);
   }
+
+  const detailsComplete = Boolean(form.name && form.email && form.role && portfolioFile);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!detailsComplete) {
+      setError('Please fill in your name, email, and target role, and select your portfolio file.');
+      return;
+    }
+
+    if (!portfolioFile) {
+      setError('Portfolio file is required.');
+      return;
+    }
+
+    setIsSubmitting(true);
     setError(null);
-
-    if (!form.name || !form.email || !form.role) {
-      setError('Please fill in your name, email, and target role.');
-      return;
-    }
-
-    if (!portfolioBase64 || !portfolioName) {
-      setError('Please upload your portfolio file (PDF, DOC/DOCX, or HTML).');
-      return;
-    }
-
-    if (!isCareerEmailConfigured()) {
-      setError('Email is not configured yet. Please email your application to elevardigitalstudio@gmail.com.');
-      return;
-    }
-
-    if (submittingRef.current) return; // ignore duplicate rapid clicks
-    submittingRef.current = true;
-    setLoading(true);
-
-    const applicationId = `ELV-CAREER-${Date.now().toString(36).toUpperCase().slice(-8)}`;
+    setSuccessMessage(null);
 
     try {
-      const attachment: EmailJSAttachment = {
-        name: portfolioName,
-        data: portfolioBase64,
-      };
+      // Send application via API route with file attachment
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('email', form.email);
+      formData.append('linkedin', form.linkedin || '');
+      formData.append('location', form.location || '');
+      formData.append('role', form.role);
+      formData.append('portfolio', portfolioFile);
 
-      await sendCareerApplication(
-        {
-          from_name: form.name,
-          from_email: form.email,
-          reply_to: form.email,
-          role: form.role,
-          linkedin: form.linkedin,
-          location: form.location,
-          application_id: applicationId,
-          portfolio_name: portfolioName,
-          portfolio_note: `Portfolio attached (${portfolioName})`,
-        },
-        attachment
-      );
+      const response = await fetch('/api/career', {
+        method: 'POST',
+        body: formData,
+      });
 
-      setSubmittedResult({ applicationId });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send application');
+      }
+
+      // Success - show message
       setForm({ name: '', email: '', linkedin: '', location: '', role: '' });
+      setPortfolioFile(null);
       setPortfolioName(null);
-      setPortfolioBase64(null);
-    } catch (err: any) {
-      const message =
-        err?.text || err?.message || 'Unexpected error while sending the application.';
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setError(null);
+      setSuccessMessage('Application sent successfully with portfolio attached!');
+      
+      // Clear success message after 6 seconds
+      setTimeout(() => setSuccessMessage(null), 6000);
+    } catch (err) {
       setError(
-        `Application failed to send (${message}). Please email it directly to elevardigitalstudio@gmail.com.`
+        err instanceof Error
+          ? `Failed to send application: ${err.message}`
+          : 'Failed to send application. Please try again or email directly to elevardigitalstudio@gmail.com'
       );
     } finally {
-      setLoading(false);
-      submittingRef.current = false;
+      setIsSubmitting(false);
     }
   }
-
-  const mailtoFallback = () =>
-    `mailto:elevardigitalstudio@gmail.com?subject=${encodeURIComponent(
-      `Application for ${form.role || 'role'} - ${form.name || 'Applicant'}`
-    )}&body=${encodeURIComponent(
-      `Hi Elevar Team,\n\nI'd like to apply for the ${form.role || ''} role.\n\nName: ${form.name}\nEmail: ${form.email}\nLinkedIn: ${form.linkedin || 'N/A'}\nLocation: ${form.location || 'N/A'}\nPortfolio: attached separately (PDF/DOC/HTML)\n\nThanks!`
-    )}`;
 
   return (
     <main className="selected-hero">
       <section className="container" style={{ maxWidth: 860 }}>
-        {!submittedResult ? (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.36 }}
-            className="call-form"
-          >
-            <div className="section-heading" style={{ marginBottom: 28 }}>
-              <span className="eyebrow">Join The Team</span>
-              <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginTop: 12 }}>
-                Build content that <span>converts</span>
-              </h1>
-              <p style={{ marginTop: 8 }}>
-                We&apos;re a small, fast team building content systems for founders. If you ship great work, care about
-                storytelling, and love measurable impact — we&apos;d love to see your portfolio.
-              </p>
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.36 }}
+          className="call-form"
+        >
+          <div className="section-heading" style={{ marginBottom: 28 }}>
+            <span className="eyebrow">Join The Team</span>
+            <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginTop: 12 }}>
+              Build content that <span>converts</span>
+            </h1>
+            <p style={{ marginTop: 8 }}>
+              We&apos;re a small, fast team building content systems for founders. If you ship great work, care about
+              storytelling, and love measurable impact — we&apos;d love to see your portfolio.
+            </p>
+          </div>
 
-            <form onSubmit={handleSubmit} className="form-grid">
-              <div className="form-row">
-                <div className="field">
-                  <label htmlFor="name">Full Name *</label>
-                  <input
-                    id="name"
-                    name="name"
-                    placeholder="John Doe"
-                    value={form.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="email">Email Address *</label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="field">
-                  <label htmlFor="role">Target Role *</label>
-                  <input
-                    id="role"
-                    name="role"
-                    placeholder="e.g. Video Editor / Motion Designer"
-                    value={form.role}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="field">
-                  <label htmlFor="linkedin">LinkedIn Profile</label>
-                  <input
-                    id="linkedin"
-                    name="linkedin"
-                    placeholder="https://linkedin.com/in/username"
-                    value={form.linkedin}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
+          <form onSubmit={handleSubmit} className="form-grid">
+            <div className="form-row">
               <div className="field">
-                <label htmlFor="location">Location</label>
+                <label htmlFor="name">Full Name *</label>
                 <input
-                  id="location"
-                  name="location"
-                  placeholder="City, Country (e.g. Chennai, IST)"
-                  value={form.location}
+                  id="name"
+                  name="name"
+                  placeholder="John Doe"
+                  value={form.name}
                   onChange={handleChange}
+                  disabled={isSubmitting}
+                  required
                 />
               </div>
-
               <div className="field">
-                <label>Portfolio File * (PDF, DOC/DOCX, or HTML)</label>
-                <div className="queue-note" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: 10 }}>
-                    <span style={{ fontSize: '0.82rem', color: 'var(--text)' }}>
-                      {portfolioName ? `Selected: ${portfolioName}` : 'Upload PDF, Word, or HTML (max 1.5MB)'}
-                    </span>
-                    <label className="btn btn-secondary compact" style={{ cursor: 'pointer', margin: 0 }}>
-                      <Upload size={14} />
-                      <span>Browse File</span>
-                      <input
-                        type="file"
-                        accept=".pdf,.doc,.docx,.html,.htm,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/html"
-                        onChange={handleFile}
-                        style={{ display: 'none' }}
-                      />
-                    </label>
-                  </div>
-                </div>
+                <label htmlFor="email">Email Address *</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={form.email}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  required
+                />
               </div>
-
-              {error && (
-                <div style={{ color: '#ff4d4d', fontSize: '0.85rem', marginTop: 4 }}>
-                  {error}
-                </div>
-              )}
-
-              <div style={{ marginTop: 12 }}>
-                <Button type="submit" size="lg" className="btn-elevar" disabled={loading} style={{ width: '100%' }}>
-                  {loading ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" /> Sending Application...
-                    </>
-                  ) : (
-                    'Submit Application'
-                  )}
-                </Button>
-              </div>
-
-              <p style={{ margin: '12px 0 0', fontSize: '0.82rem', color: 'var(--muted)', textAlign: 'center' }}>
-                Your application is automatically emailed to{' '}
-                <a
-                  href={mailtoFallback()}
-                  style={{ color: 'var(--primary)', textDecoration: 'underline' }}
-                >
-                  elevardigitalstudio@gmail.com
-                </a>
-              </p>
-            </form>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="call-form"
-            style={{ textAlign: 'center', padding: '48px 28px' }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16, color: 'var(--primary)' }}>
-              <CheckCircle2 size={48} />
             </div>
-            <h2 style={{ margin: '0 0 12px 0', fontSize: '1.8rem' }}>Application Submitted!</h2>
-            <p style={{ color: 'var(--muted)', maxWidth: 560, margin: '0 auto 24px', lineHeight: 1.6 }}>
-              Your application and portfolio have been automatically delivered to our inbox. Reference ID: <strong style={{ color: 'var(--text)' }}>{submittedResult.applicationId}</strong>.
-            </p>
 
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <a href="mailto:elevardigitalstudio@gmail.com" className="btn btn-primary">
-                <Mail size={14} /> Contact Hiring Team
+            <div className="form-row">
+              <div className="field">
+                <label htmlFor="role">Target Role *</label>
+                <input
+                  id="role"
+                  name="role"
+                  placeholder="e.g. Video Editor / Motion Designer"
+                  value={form.role}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="linkedin">LinkedIn Profile</label>
+                <input
+                  id="linkedin"
+                  name="linkedin"
+                  placeholder="https://linkedin.com/in/username"
+                  value={form.linkedin}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="location">Location</label>
+              <input
+                id="location"
+                name="location"
+                placeholder="City, Country (e.g. Chennai, IST)"
+                value={form.location}
+                onChange={handleChange}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="field">
+              <label>Portfolio File * (PDF, DOC/DOCX, or HTML)</label>
+              <div className="queue-note" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: 10 }}>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text)' }}>
+                    {portfolioName ? `Selected: ${portfolioName}` : 'Upload PDF, Word, or HTML (max 1.5MB)'}
+                  </span>
+                  <label className="btn btn-secondary compact" style={{ cursor: 'pointer', margin: 0, opacity: isSubmitting ? 0.6 : 1, pointerEvents: isSubmitting ? 'none' : 'auto' }}>
+                    <Upload size={14} />
+                    <span>Browse File</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.doc,.docx,.html,.htm,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/html"
+                      onChange={handleFile}
+                      disabled={isSubmitting}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {error && (
+              <div style={{ color: '#ff4d4d', fontSize: '0.85rem', marginTop: 4 }}>
+                {error}
+              </div>
+            )}
+
+            {successMessage && (
+              <div style={{ color: '#22c55e', fontSize: '0.85rem', marginTop: 4 }}>
+                ✓ {successMessage}
+              </div>
+            )}
+
+            <div style={{ marginTop: 12 }}>
+              <Button
+                type="submit"
+                size="lg"
+                className="btn-elevar"
+                disabled={!detailsComplete || isSubmitting}
+                style={{ width: '100%' }}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader size={16} className="animate-spin" /> Sending...
+                  </>
+                ) : detailsComplete ? (
+                  'Send Application'
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} /> Fill all details to enable
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <p style={{ margin: '12px 0 0', fontSize: '0.82rem', color: 'var(--muted)', textAlign: 'center' }}>
+              Your application will be sent directly to{' '}
+              <a
+                href={`mailto:${APPLICATION_INBOX}`}
+                style={{ color: 'var(--primary)', textDecoration: 'underline' }}
+              >
+                {APPLICATION_INBOX}
               </a>
-            </div>
-          </motion.div>
-        )}
+              .
+            </p>
+          </form>
+        </motion.div>
       </section>
     </main>
   );
