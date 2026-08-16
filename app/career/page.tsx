@@ -96,7 +96,7 @@ export default function CareerPage() {
       formData.append('role', form.role);
       formData.append('portfolio', portfolioFile);
 
-      const response = await fetch('/api/career', {
+      const response = await fetch('/api/career/', {
         method: 'POST',
         body: formData,
       });
