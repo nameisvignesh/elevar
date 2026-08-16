@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,11 +13,16 @@ import {
 
 /**
  * Booking is handled by a Google Form that emails responses to
- * elevardigitalstudio@gmail.com. Paste the form's public embed/preview URL
- * below (the one ending in /viewform — NOT the edit URL). The form must be set
- * to "Anyone with the link can respond" so visitors can submit it.
+ * elevardigitalstudio@gmail.com.
+ *
+ * IMPORTANT: use the full canonical form URL (docs.google.com/forms/d/e/<ID>/viewform)
+ * with ?embedded=true — NOT a forms.gle short link. Short links redirect at
+ * runtime and Google rejects embedding redirected URLs, which surfaces the
+ * "you don't have permission to access this form" error (.claude/errors/e1.png).
+ * The form must also be set to "Anyone with the link can respond".
  */
-const GOOGLE_FORM_EMBED_URL = 'https://forms.gle/6yVpdx6fD5hH5pyy6';
+const GOOGLE_FORM_EMBED_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSfbhMurG1LcPQBiAXaukjG8wT1l8s3En7ltOHVspj8s-8z_Aw/viewform?embedded=true';
 
 /**
  * The booking form is configured once a real Google Form URL is pasted above.
@@ -25,9 +31,43 @@ const GOOGLE_FORM_EMBED_URL = 'https://forms.gle/6yVpdx6fD5hH5pyy6';
  */
 const FORM_CONFIGURED = !GOOGLE_FORM_EMBED_URL.includes('PASTE_YOUR_FORM_ID_HERE');
 
+/**
+ * If the iframe fails to load within this window (permission-restricted,
+ * network-blocked, or redirects), we swap it for the email CTA so the page is
+ * never a dead end. Google Form embed failures don't always fire onError, so we
+ * also watch for the absence of onLoad.
+ */
+const FORM_LOAD_TIMEOUT_MS = 6000;
+
 const APPLICATION_INBOX = 'elevardigitalstudio@gmail.com';
 
+const MAILTO_HREF = `mailto:${APPLICATION_INBOX}?subject=${encodeURIComponent(
+  'Request a Strategy Call'
+)}&body=${encodeURIComponent(
+  'Hi Elevar Team,\n\nI’d like to book a free 30-minute strategy call.\n\nName:\nEmail:\nPreferred time:'
+)}`;
+
 export default function BookCall() {
+  const [formLoaded, setFormLoaded] = useState(false);
+  const [formFailed, setFormFailed] = useState(false);
+  const loadTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (!FORM_CONFIGURED) return;
+    loadTimerRef.current = setTimeout(() => {
+      // If the iframe never signalled a successful load, assume it's blocked.
+      setFormFailed(true);
+    }, FORM_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(loadTimerRef.current);
+  }, []);
+
+  function handleFormLoad() {
+    clearTimeout(loadTimerRef.current);
+    setFormLoaded(true);
+  }
+
+  const showEmailFallback = !FORM_CONFIGURED || formFailed;
+
   return (
     <main className="booking-hero">
       <section className="container">
@@ -119,17 +159,7 @@ export default function BookCall() {
               overflow: 'hidden',
             }}
           >
-            {FORM_CONFIGURED ? (
-              <iframe
-                title="Book a Strategy Call"
-                src={GOOGLE_FORM_EMBED_URL}
-                width="100%"
-                height="720"
-                style={{ border: 'none', borderRadius: '10px', background: '#fff' }}
-              >
-                Loading the booking form…
-              </iframe>
-            ) : (
+            {showEmailFallback ? (
               <div
                 style={{
                   display: 'flex',
@@ -159,25 +189,43 @@ export default function BookCall() {
                   <Mail size={26} />
                 </div>
                 <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--text)' }}>
-                  Booking is opening soon
+                  {FORM_CONFIGURED ? "We couldn't load the booking form" : 'Booking is opening soon'}
                 </h3>
                 <p style={{ margin: 0, maxWidth: '420px', color: 'var(--muted)', lineHeight: 1.6 }}>
-                  The self-serve booking form is being set up. In the meantime, email us at{' '}
+                  {FORM_CONFIGURED
+                    ? 'The form may be restricted or blocked by your network. Open it in a new tab or email us at '
+                    : 'The self-serve booking form is being set up. In the meantime, email us at '}
                   <strong style={{ color: 'var(--text)' }}>{APPLICATION_INBOX}</strong> and we&apos;ll confirm
                   your free 30-minute strategy call right away.
                 </p>
-                <Button
-                  asChild
-                  size="lg"
-                  className="btn-elevar"
-                  style={{ marginTop: '4px' }}
-                >
-                  <a href={`mailto:${APPLICATION_INBOX}?subject=${encodeURIComponent('Request a Strategy Call')}&body=${encodeURIComponent('Hi Elevar Team,\n\nI’d like to book a free 30-minute strategy call.\n\nName:\nEmail:\nPreferred time:')}`}>
-                    <Mail size={16} />
-                    Email us to book
-                  </a>
-                </Button>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '4px' }}>
+                  {FORM_CONFIGURED && (
+                    <Button asChild size="lg" className="btn-elevar" variant="outline">
+                      <a href={GOOGLE_FORM_EMBED_URL.replace('?embedded=true', '')} target="_blank" rel="noopener noreferrer">
+                        Open form in new tab
+                      </a>
+                    </Button>
+                  )}
+                  <Button asChild size="lg" className="btn-elevar">
+                    <a href={MAILTO_HREF}>
+                      <Mail size={16} />
+                      Email us to book
+                    </a>
+                  </Button>
+                </div>
               </div>
+            ) : (
+              <iframe
+                title="Book a Strategy Call"
+                src={GOOGLE_FORM_EMBED_URL}
+                width="100%"
+                height="720"
+                onLoad={handleFormLoad}
+                onError={() => setFormFailed(true)}
+                style={{ border: 'none', borderRadius: '10px', background: '#fff' }}
+              >
+                Loading the booking form…
+              </iframe>
             )}
 
             <p style={{ margin: '12px 0 0', fontSize: '0.8rem', color: 'var(--muted)', textAlign: 'center' }}>
