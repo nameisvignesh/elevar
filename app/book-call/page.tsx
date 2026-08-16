@@ -48,25 +48,24 @@ const MAILTO_HREF = `mailto:${APPLICATION_INBOX}?subject=${encodeURIComponent(
 )}`;
 
 export default function BookCall() {
-  const [formLoaded, setFormLoaded] = useState(false);
   const [formFailed, setFormFailed] = useState(false);
+  const [showInlineForm, setShowInlineForm] = useState(false);
   const loadTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    if (!FORM_CONFIGURED) return;
+    if (!showInlineForm || !FORM_CONFIGURED) return;
     loadTimerRef.current = setTimeout(() => {
-      // If the iframe never signalled a successful load, assume it's blocked.
+      // If the iframe never signalled a successful load, assume it's blocked
+      // (e.g. the form is still "Restricted" on Google's side and only the
+      // permission page loaded). Fall back to the email CTA.
       setFormFailed(true);
     }, FORM_LOAD_TIMEOUT_MS);
     return () => clearTimeout(loadTimerRef.current);
-  }, []);
+  }, [showInlineForm]);
 
   function handleFormLoad() {
     clearTimeout(loadTimerRef.current);
-    setFormLoaded(true);
   }
-
-  const showEmailFallback = !FORM_CONFIGURED || formFailed;
 
   return (
     <main className="booking-hero">
@@ -159,7 +158,19 @@ export default function BookCall() {
               overflow: 'hidden',
             }}
           >
-            {showEmailFallback ? (
+            {showInlineForm && FORM_CONFIGURED && !formFailed ? (
+              <iframe
+                title="Book a Strategy Call"
+                src={GOOGLE_FORM_EMBED_URL}
+                width="100%"
+                height="720"
+                onLoad={handleFormLoad}
+                onError={() => setFormFailed(true)}
+                style={{ border: 'none', borderRadius: '10px', background: '#fff' }}
+              >
+                Loading the booking form…
+              </iframe>
+            ) : showInlineForm && formFailed ? (
               <div
                 style={{
                   display: 'flex',
@@ -189,21 +200,73 @@ export default function BookCall() {
                   <Mail size={26} />
                 </div>
                 <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--text)' }}>
-                  {FORM_CONFIGURED ? "We couldn't load the booking form" : 'Booking is opening soon'}
+                  We couldn&apos;t load the booking form
                 </h3>
                 <p style={{ margin: 0, maxWidth: '420px', color: 'var(--muted)', lineHeight: 1.6 }}>
-                  {FORM_CONFIGURED
-                    ? 'The form may be restricted or blocked by your network. Open it in a new tab or email us at '
-                    : 'The self-serve booking form is being set up. In the meantime, email us at '}
+                  The form may be restricted or blocked by your network. Open it in a new tab or email us at{' '}
                   <strong style={{ color: 'var(--text)' }}>{APPLICATION_INBOX}</strong> and we&apos;ll confirm
                   your free 30-minute strategy call right away.
                 </p>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '4px' }}>
+                  <Button asChild size="lg" className="btn-elevar" variant="outline">
+                    <a href={GOOGLE_FORM_EMBED_URL.replace('?embedded=true', '')} target="_blank" rel="noopener noreferrer">
+                      Open form in new tab
+                    </a>
+                  </Button>
+                  <Button asChild size="lg" className="btn-elevar">
+                    <a href={MAILTO_HREF}>
+                      <Mail size={16} />
+                      Email us to book
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  gap: '16px',
+                  minHeight: '420px',
+                  padding: '32px 20px',
+                  borderRadius: '10px',
+                  background: 'rgba(0,180,216,0.06)',
+                  border: '1px dashed var(--border)',
+                }}
+              >
+                <div
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: '50%',
+                    display: 'grid',
+                    placeItems: 'center',
+                    background: 'rgba(0,180,216,0.12)',
+                    color: 'var(--primary)',
+                  }}
+                >
+                  <Mail size={26} />
+                </div>
+                <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'var(--text)' }}>
+                  Book your free strategy call
+                </h3>
+                <p style={{ margin: 0, maxWidth: '440px', color: 'var(--muted)', lineHeight: 1.6 }}>
+                  Fill in the quick form online, or skip straight to email and we&apos;ll confirm your 30-minute
+                  session at{' '}
+                  <strong style={{ color: 'var(--text)' }}>{APPLICATION_INBOX}</strong>.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '4px' }}>
                   {FORM_CONFIGURED && (
-                    <Button asChild size="lg" className="btn-elevar" variant="outline">
-                      <a href={GOOGLE_FORM_EMBED_URL.replace('?embedded=true', '')} target="_blank" rel="noopener noreferrer">
-                        Open form in new tab
-                      </a>
+                    <Button
+                      size="lg"
+                      className="btn-elevar"
+                      variant="outline"
+                      onClick={() => setShowInlineForm(true)}
+                    >
+                      Fill in the form
                     </Button>
                   )}
                   <Button asChild size="lg" className="btn-elevar">
@@ -214,18 +277,6 @@ export default function BookCall() {
                   </Button>
                 </div>
               </div>
-            ) : (
-              <iframe
-                title="Book a Strategy Call"
-                src={GOOGLE_FORM_EMBED_URL}
-                width="100%"
-                height="720"
-                onLoad={handleFormLoad}
-                onError={() => setFormFailed(true)}
-                style={{ border: 'none', borderRadius: '10px', background: '#fff' }}
-              >
-                Loading the booking form…
-              </iframe>
             )}
 
             <p style={{ margin: '12px 0 0', fontSize: '0.8rem', color: 'var(--muted)', textAlign: 'center' }}>
