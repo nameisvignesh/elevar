@@ -16,7 +16,7 @@ import {
  * below (the one ending in /viewform — NOT the edit URL). The form must be set
  * to "Anyone with the link can respond" so visitors can submit it.
  */
-const GOOGLE_FORM_EMBED_URL = 'https://forms.gle/d2tUXgk3rRBoFZLR9';
+const GOOGLE_FORM_EMBED_URL = 'https://forms.gle/6yVpdx6fD5hH5pyy6';
 
 /**
  * The booking form is configured once a real Google Form URL is pasted above.
