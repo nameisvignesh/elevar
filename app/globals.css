@@ -116,17 +116,17 @@ html.light {
 }
 
 html.light .auth-sign-up {
-  background: #e0f2fe;
-  color: #075985;
-  border-color: #38bdf8;
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.12);
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #94a3b8;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
 }
 
 html.light .auth-sign-up:hover {
-  background: #0284c7;
-  color: #ffffff;
-  border-color: #0284c7;
-  box-shadow: 0 10px 24px rgba(2, 132, 199, 0.22);
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #64748b;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
 }
 
 /* shadcn Button for form submits keeps the site's white-on-teal .btn-primary */
