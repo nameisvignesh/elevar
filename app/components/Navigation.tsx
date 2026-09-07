@@ -265,7 +265,7 @@ export function Navigation() {
               </div>
             ) : (
               <>
-                <Button size="sm" variant="outline" className="book-call-nav" onClick={() => { setOpen(false); setAuthMode('sign-up'); }}>
+                <Button size="sm" variant="outline" className="book-call-nav auth-sign-up" onClick={() => { setOpen(false); setAuthMode('sign-up'); }}>
                   Sign Up
                 </Button>
                 <Button size="sm" className="book-call-nav" onClick={() => { setOpen(false); setAuthMode('sign-in'); }}>
