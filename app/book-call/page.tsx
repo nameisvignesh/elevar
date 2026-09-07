@@ -50,14 +50,32 @@ const MAILTO_HREF = `mailto:${APPLICATION_INBOX}?subject=${encodeURIComponent(
 export default function BookCall() {
   const [formFailed, setFormFailed] = useState(false);
   const [showInlineForm, setShowInlineForm] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'login'>('signin');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [userName, setUserName] = useState('');
+  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
   const loadTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    const savedSession = localStorage.getItem('elevar-book-call-session');
+    if (savedSession) {
+      try {
+        const parsed = JSON.parse(savedSession) as { name: string; email: string };
+        if (parsed?.email) {
+          setUserName(parsed.name || 'Team member');
+          setIsAuthenticated(true);
+          setShowInlineForm(true);
+        }
+      } catch {
+        localStorage.removeItem('elevar-book-call-session');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!showInlineForm || !FORM_CONFIGURED) return;
     loadTimerRef.current = setTimeout(() => {
-      // If the iframe never signalled a successful load, assume it's blocked
-      // (e.g. the form is still "Restricted" on Google's side and only the
-      // permission page loaded). Fall back to the email CTA.
       setFormFailed(true);
     }, FORM_LOAD_TIMEOUT_MS);
     return () => clearTimeout(loadTimerRef.current);
@@ -65,6 +83,68 @@ export default function BookCall() {
 
   function handleFormLoad() {
     clearTimeout(loadTimerRef.current);
+  }
+
+  function handleAuthChange(field: 'name' | 'email' | 'password', value: string) {
+    setAuthForm(prev => ({ ...prev, [field]: value }));
+  }
+
+  function handleAuthSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmedName = authForm.name.trim();
+    const trimmedEmail = authForm.email.trim().toLowerCase();
+    const trimmedPassword = authForm.password.trim();
+
+    if (!trimmedEmail || !trimmedPassword || (authMode === 'signin' && !trimmedName)) {
+      setAuthError('Please complete the required fields to continue.');
+      return;
+    }
+
+    const existingUsers = JSON.parse(localStorage.getItem('elevar-book-call-users') || '[]') as Array<{
+      name: string;
+      email: string;
+      password: string;
+    }>;
+
+    if (authMode === 'signin') {
+      const duplicate = existingUsers.some(user => user.email.toLowerCase() === trimmedEmail);
+      if (duplicate) {
+        setAuthError('An account for this email already exists. Please log in instead.');
+        return;
+      }
+
+      const newUser = { name: trimmedName, email: trimmedEmail, password: trimmedPassword };
+      localStorage.setItem('elevar-book-call-users', JSON.stringify([...existingUsers, newUser]));
+      localStorage.setItem('elevar-book-call-session', JSON.stringify({ name: trimmedName, email: trimmedEmail }));
+      setUserName(trimmedName);
+      setIsAuthenticated(true);
+      setShowInlineForm(true);
+      setAuthError(null);
+      return;
+    }
+
+    const user = existingUsers.find(
+      item => item.email.toLowerCase() === trimmedEmail && item.password === trimmedPassword
+    );
+
+    if (!user) {
+      setAuthError('We could not find an account with those details. Please try again.');
+      return;
+    }
+
+    localStorage.setItem('elevar-book-call-session', JSON.stringify({ name: user.name, email: user.email }));
+    setUserName(user.name);
+    setIsAuthenticated(true);
+    setShowInlineForm(true);
+    setAuthError(null);
+  }
+
+  function handleLogout() {
+    setIsAuthenticated(false);
+    setShowInlineForm(false);
+    setAuthForm({ name: '', email: '', password: '' });
+    setAuthError(null);
+    localStorage.removeItem('elevar-book-call-session');
   }
 
   return (
@@ -158,18 +238,120 @@ export default function BookCall() {
               overflow: 'hidden',
             }}
           >
-            {showInlineForm && FORM_CONFIGURED && !formFailed ? (
-              <iframe
-                title="Book a Strategy Call"
-                src={GOOGLE_FORM_EMBED_URL}
-                width="100%"
-                height="720"
-                onLoad={handleFormLoad}
-                onError={() => setFormFailed(true)}
-                style={{ border: 'none', borderRadius: '10px', background: '#fff' }}
-              >
-                Loading the booking form…
-              </iframe>
+            {!isAuthenticated ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', minHeight: '420px', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: '999px', padding: '6px', width: 'fit-content' }}>
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('signin')}
+                    style={{
+                      border: 'none',
+                      borderRadius: '999px',
+                      padding: '9px 16px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: authMode === 'signin' ? 'var(--primary)' : 'transparent',
+                      color: authMode === 'signin' ? '#03141d' : 'var(--text)',
+                    }}
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('login')}
+                    style={{
+                      border: 'none',
+                      borderRadius: '999px',
+                      padding: '9px 16px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      background: authMode === 'login' ? 'var(--primary)' : 'transparent',
+                      color: authMode === 'login' ? '#03141d' : 'var(--text)',
+                    }}
+                  >
+                    Log in
+                  </button>
+                </div>
+
+                <form onSubmit={handleAuthSubmit} style={{ display: 'grid', gap: '14px' }}>
+                  {authMode === 'signin' && (
+                    <div className="field">
+                      <label htmlFor="auth-name">Full name</label>
+                      <input
+                        id="auth-name"
+                        name="auth-name"
+                        type="text"
+                        value={authForm.name}
+                        onChange={event => handleAuthChange('name', event.target.value)}
+                        placeholder="Jane Doe"
+                      />
+                    </div>
+                  )}
+
+                  <div className="field">
+                    <label htmlFor="auth-email">Email</label>
+                    <input
+                      id="auth-email"
+                      name="auth-email"
+                      type="email"
+                      value={authForm.email}
+                      onChange={event => handleAuthChange('email', event.target.value)}
+                      placeholder="you@example.com"
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="auth-password">Password</label>
+                    <input
+                      id="auth-password"
+                      name="auth-password"
+                      type="password"
+                      value={authForm.password}
+                      onChange={event => handleAuthChange('password', event.target.value)}
+                      placeholder="Enter your password"
+                    />
+                  </div>
+
+                  {authError && (
+                    <p style={{ margin: 0, color: '#ff6a6a', fontSize: '0.85rem' }}>{authError}</p>
+                  )}
+
+                  <Button type="submit" size="lg" className="btn-elevar">
+                    {authMode === 'signin' ? 'Create account' : 'Log in'}
+                  </Button>
+                </form>
+              </div>
+            ) : showInlineForm && FORM_CONFIGURED && !formFailed ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>Signed in as {userName}</span>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    style={{
+                      border: '1px solid var(--border)',
+                      background: 'transparent',
+                      color: 'var(--text)',
+                      borderRadius: '999px',
+                      padding: '7px 12px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Log out
+                  </button>
+                </div>
+                <iframe
+                  title="Book a Strategy Call"
+                  src={GOOGLE_FORM_EMBED_URL}
+                  width="100%"
+                  height="720"
+                  onLoad={handleFormLoad}
+                  onError={() => setFormFailed(true)}
+                  style={{ border: 'none', borderRadius: '10px', background: '#fff' }}
+                >
+                  Loading the booking form…
+                </iframe>
+              </div>
             ) : showInlineForm && formFailed ? (
               <div
                 style={{
