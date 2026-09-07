@@ -24,6 +24,12 @@ import {
 const GOOGLE_FORM_EMBED_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLSfbhMurG1LcPQBiAXaukjG8wT1l8s3En7ltOHVspj8s-8z_Aw/viewform?embedded=true';
 
+// Copy these values from Google's pre-filled form link, for example entry.123456789.
+const GOOGLE_FORM_ENTRY_IDS = {
+  name: '',
+  email: '',
+};
+
 /**
  * The booking form is configured once a real Google Form URL is pasted above.
  * Until then we render a graceful email CTA instead of a broken iframe, so the
@@ -75,6 +81,20 @@ function buildAvatarText(value: string) {
   const parts = value.trim().split(/\s+/).filter(Boolean).slice(0, 2);
   if (!parts.length) return 'E';
   return parts.map((part) => part[0]?.toUpperCase() ?? '').join('').slice(0, 2);
+}
+
+function buildGoogleFormUrl(user: AuthUser | null) {
+  const formUrl = new URL(GOOGLE_FORM_EMBED_URL);
+
+  if (user && GOOGLE_FORM_ENTRY_IDS.name) {
+    formUrl.searchParams.set(GOOGLE_FORM_ENTRY_IDS.name, user.name);
+  }
+
+  if (user && GOOGLE_FORM_ENTRY_IDS.email) {
+    formUrl.searchParams.set(GOOGLE_FORM_ENTRY_IDS.email, user.email);
+  }
+
+  return formUrl.toString();
 }
 
 export default function BookCall() {
@@ -371,7 +391,7 @@ export default function BookCall() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <iframe
-                      src={GOOGLE_FORM_EMBED_URL}
+                      src={buildGoogleFormUrl(user)}
                       title="Book a Call"
                       onLoad={handleFormLoad}
                       style={{ width: '100%', minHeight: '620px', border: 'none', borderRadius: '12px', background: '#0d1725' }}
