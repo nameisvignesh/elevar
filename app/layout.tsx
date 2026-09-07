@@ -1,20 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Poppins } from 'next/font/google';
 import Footer from './components/Footer';
-import Link from 'next/link';
-import {
-  Building2,
-  BriefcaseBusiness,
-  Layers3,
-  Workflow,
-  UserRound,
-  FolderKanban,
-  CalendarCheck,
-  Download,
-  Mail,
-  Phone,
-} from 'lucide-react';
-
 import './globals.css';
 import { Navigation } from './components/Navigation';
 import { ChatbotButton } from './components/ChatbotButton';
@@ -29,8 +15,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: 'Elevar - Personal Brand Growth',
-  description:
-    'Strategic content engines for personal brand elevation',
+  description: 'Strategic content engines for personal brand elevation',
   icons: {
     icon: withBasePath('/logo.svg'),
     shortcut: withBasePath('/logo.svg'),
@@ -49,14 +34,22 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
+  const appShell = (
+    <>
+      <Navigation />
+      <main>{children}</main>
+      <ChatbotButton />
+      <Footer />
+    </>
+  );
+
+  const htmlShell = (
     <html
       lang="en"
       className={`${poppins.variable} dark`}
       suppressHydrationWarning
     >
       <head>
-        {/* metadata.manifest is not basePath-aware in Next 14 — link manually */}
         <link rel="manifest" href={withBasePath('/manifest.webmanifest')} />
         <script
           dangerouslySetInnerHTML={{
@@ -78,21 +71,9 @@ export default function RootLayout({
           }}
         />
       </head>
-
-      <body>
-        <Navigation />
-
-        <main>{children}</main>
-
-        <ChatbotButton />
-
-        {/* =====================================================
-            FOOTER
-        ===================================================== */}
-
-        <Footer />
-
-      </body>
+      <body>{appShell}</body>
     </html>
   );
+
+  return htmlShell;
 }
