@@ -1,14 +1,14 @@
-/** Add the active deployment's path prefix to root-relative static assets. */
-const BASE_PATH = process.env.NEXT_PUBLIC_SITE_BASE_PATH ??
-  (process.env.NODE_ENV === 'production' ? '/elevar' : '');
-const VIDEO_BASE_URL = process.env.NEXT_PUBLIC_VIDEO_BASE_URL ?? '';
+/**
+ * GitHub Pages project sites are served under a base path (/elevar). next/link
+ * and next/image get that prefix automatically, but raw URLs — <video poster>,
+ * plain <a href>, manifest icons — do not, so they 404 in production without
+ * this helper. Dev keeps an empty prefix.
+ */
+const BASE_PATH = process.env.NODE_ENV === 'production' ? '/elevar' : '';
 
-/** Prefix static asset paths for GitHub Pages and route video media when configured. */
+/** Prefixes a root-relative path with the deployment base path. */
 export function withBasePath(path?: string): string {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  if (VIDEO_BASE_URL && path.toLowerCase().endsWith('.mp4')) {
-    return `${VIDEO_BASE_URL}${path}`;
-  }
   return `${BASE_PATH}${path}`;
 }
