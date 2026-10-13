@@ -63,7 +63,7 @@ export function Navigation() {
             return (
               <Link
                 key={link.href}
-                href={hash ? `${withBasePath('/')}#${hash}` : withBasePath(link.href)}
+                href={link.href}
                 className={isActive ? 'active' : ''}
                 onClick={(event) => {
                   setOpen(false);
