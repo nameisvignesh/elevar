@@ -43,7 +43,7 @@ export function Navigation() {
       <nav className="container nav" aria-label="Main navigation">
         <Link href="/" className="brand" onClick={() => setOpen(false)}>
           <Image
-            src={withBasePath('/logo.svg')}
+            src={withBasePath('/brands/elevar-mark.svg')}
             alt=""
             width={36}
             height={36}

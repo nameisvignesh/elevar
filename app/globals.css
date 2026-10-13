@@ -3163,10 +3163,9 @@ html.light .brand-mark {
   }
 }
 
-/* Home uses landscape previews; the full portfolio stays in its original
-   vertical 9:16 format. */
+/* Home portfolio cards preserve the vertical 9:16 reel format. */
 .work-band .work-preview {
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 9 / 16;
 }
 
 .work-preview-brand {

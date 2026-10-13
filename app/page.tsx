@@ -660,9 +660,8 @@ function WorkPreviewVideo({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [volume, setVolume] = useState(1);
-  /* Derived from the video's intrinsic dimensions so the card renders in
-     its original ratio (no cropping). */
-  const aspectRatio = compact ? '16 / 9' : '9 / 16';
+  /* Portfolio cards consistently preserve the vertical 9:16 reel format. */
+  const aspectRatio = '9 / 16';
 
   /* Force DOM sync for muted property */
   useEffect(() => {
@@ -851,7 +850,7 @@ function WorkPreviewVideo({
 
       {compact && (
         <div className="work-preview-brand" aria-hidden="true" style={{ pointerEvents: 'none' }}>
-          <Image src={withBasePath('/logo.svg')} alt="" width={18} height={18} />
+          <Image src={withBasePath('/brands/elevar-mark.svg')} alt="" width={18} height={18} />
           <span>Elevar</span>
         </div>
       )}
