@@ -126,7 +126,7 @@ Deno.serve(async (request) => {
   if (!result?.accepted) return json({ error: 'You’ve reached three requests for today. You can send another after midnight IST.' }, 429, origin);
 
   const requestId = String(result.requestId || '');
-  let agencyAutomation = { emailSent: false, emailImportant: false, taskCreated: false };
+  let agencyAutomation = { emailSent: false, emailImportant: false, taskCreated: false, spreadsheetUpdated: false, excelAttached: false };
   const automationUrl = Deno.env.get('GOOGLE_APPS_SCRIPT_URL');
   const automationToken = Deno.env.get('GOOGLE_APPS_SCRIPT_TOKEN');
 
@@ -155,6 +155,8 @@ Deno.serve(async (request) => {
           emailSent: Boolean(automationResult.emailSent),
           emailImportant: Boolean(automationResult.emailImportant),
           taskCreated: Boolean(automationResult.taskCreated),
+          spreadsheetUpdated: Boolean(automationResult.spreadsheetUpdated),
+          excelAttached: Boolean(automationResult.excelAttached),
         };
       } else {
         console.error('Agency booking automation did not complete:', automationResponse.status);
@@ -171,5 +173,7 @@ Deno.serve(async (request) => {
     agencyEmailSent: agencyAutomation.emailSent,
     agencyEmailImportant: agencyAutomation.emailImportant,
     agencyTaskCreated: agencyAutomation.taskCreated,
+    agencySpreadsheetUpdated: agencyAutomation.spreadsheetUpdated,
+    agencyExcelAttached: agencyAutomation.excelAttached,
   }, 200, origin);
 });

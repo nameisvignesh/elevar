@@ -46,13 +46,12 @@
 - **Hero** — a direct introduction to Elevar and its content services.
 - **Process** — an 8-step engine: Discovery → Strategy → Script → Pre-Prod → Production → Post → Publishing → Growth Analysis.
 - **Services** — Video Editing, Content Strategy, AI Production, Social Management, Brand Content, and a Custom Bundle.
-- **Portfolio** — vertical 9:16 reels showcasing selected work.
+- **Selected work** — portrait 9:16 reels, with additional projects on the full portfolio page.
 - **Production tools** — software and AI video generation tools used by the team.
 - **Testimonials** — a static grid of client feedback.
 - **About / Founder** — brand story with founder imagery.
-- **Book a Call** — discovery-call capture flow.
-- **Chat Support** — a lightweight conversational helper that routes visitors to the right next step.
-- **Career** — open roles page.
+- **Book a Call** — signed-in booking requests, with up to three businesses per account each IST day.
+- **Careers** — application form with portfolio attachment and a formatted application email.
 
 ## 🎨 Design Highlights
 
@@ -72,27 +71,25 @@
 | Motion | Framer Motion |
 | Icons | lucide-react |
 | Login / signup | Clerk browser SDK |
-| Career applications | EmailJS browser SDK with email-draft fallback |
-| Booking | Embedded Google Form with email-draft fallback |
+| Career applications | EmailJS browser SDK with formatted email-draft fallback |
+| Booking | Clerk identity, Supabase Edge Function and private request table |
+| Booking notifications | Google Apps Script, Gmail, Tasks API and a Google Sheet with an Excel attachment |
 | Deploy | GitHub Pages (`/elevar` base path) |
 
 ## 🚀 Getting Started
 
 ```bash
-# install dependencies
-bun install        # or: npm install
+# install the locked dependencies
+npm ci
 
 # run the dev server
-bun run dev        # http://localhost:3000
+npm run dev        # http://localhost:3000
 
-# build for production (static export to /out)
-bun run build
-
-# preview the production build
-bun run start
+# build the static site (exported to /out)
+npm run build
 ```
 
-> 💡 Production integrations and required GitHub repository secrets are documented in [SETUP_GUIDE.md](SETUP_GUIDE.md) and `.env.example`.
+> Production integrations, deployment settings, and required GitHub repository secrets are documented in [SETUP_GUIDE.md](SETUP_GUIDE.md) and `.env.example`.
 
 ## 📁 Project Structure
 
@@ -106,12 +103,18 @@ app/
   components/           # Navigation, Footer, auth, testimonials, ...
 components/ui/          # shared UI primitives
 public/                 # logo, founder image, portfolio videos
+supabase/
+  functions/book-call/  # verifies Clerk identity and stores booking requests
+  migrations/           # private booking table and daily request limit
+google-apps-script/     # agency email, spreadsheet export and follow-up task
 docs/screenshots/       # UI previews
 ```
 
 ## 🌍 Deployment
 
-The site is exported statically and served from **GitHub Pages** under the `/elevar` path. Production builds set `basePath` / `assetPrefix` automatically via `next.config.mjs`. Server API routes are not available on Pages; career submissions use EmailJS in the browser. Configure Clerk and EmailJS secrets before rebuilding to activate those integrations.
+The site is exported statically and served from [GitHub Pages](https://nameisvignesh.github.io/elevar/) under the `/elevar` path. The `Deploy Next.js site to Pages` workflow builds and publishes `out/` on pushes to `main`. Production builds set `basePath` and `assetPrefix` automatically in `next.config.mjs`.
+
+GitHub Pages does not run Next.js API routes. The booking flow therefore calls a Supabase Edge Function, which verifies Clerk sessions and saves requests in Supabase. The optional Google Apps Script sends Elevar a formatted email, marks it important, updates the agency booking spreadsheet, attaches an Excel export, and creates a review task. See [SETUP_GUIDE.md](SETUP_GUIDE.md) before enabling production integrations.
 
 ---
 

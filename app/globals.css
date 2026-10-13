@@ -1339,7 +1339,6 @@ TESTIMONIAL HORIZONTAL SCROLL
   box-shadow: inset 0 0 0 1px rgba(156, 177, 255, 0.28);
 }
 
-.davinci-mark,
 .heygen-mark,
 .google-flow-mark {
   width: 36px;
@@ -3214,6 +3213,11 @@ html.light .brand-mark {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
+}
+
+.davinci-logo-image {
+  width: 42px;
+  height: 42px;
 }
 
 .brand-logo-image img {

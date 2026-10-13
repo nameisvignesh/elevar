@@ -585,13 +585,9 @@ function BrandLogo({ name, className }: { name: string; className: string }) {
   if (className === 'davinci') {
     return (
       <div className={`brand-logo ${className}`} role="img" aria-label={name}>
-        <svg className="davinci-mark" viewBox="0 0 48 48" aria-hidden="true">
-          <path d="M24 5C16 5 10 11 10 19h14V5Z" fill="#ee3e37" />
-          <path d="M29 6c8 2 13 9 13 17H28l1-17Z" fill="#f5b52d" />
-          <path d="M43 28c-2 8-9 13-17 13V27l17 1Z" fill="#4eb95b" />
-          <path d="M19 42C11 40 6 33 6 25h15l-2 17Z" fill="#4185d6" />
-          <circle cx="24" cy="24" r="6" fill="#f7f7f5" />
-        </svg>
+        <span className="brand-logo-image davinci-logo-image">
+          <Image src={withBasePath('/brands/davinci-resolve-studio.png')} alt="" width={48} height={48} />
+        </span>
         {label}
       </div>
     );
@@ -850,7 +846,7 @@ function WorkPreviewVideo({
 
       {compact && (
         <div className="work-preview-brand" aria-hidden="true" style={{ pointerEvents: 'none' }}>
-          <Image src={withBasePath('/brands/elevar-mark.svg')} alt="" width={18} height={18} />
+          <Image src={withBasePath('/logo.svg')} alt="" width={18} height={18} />
           <span>Elevar</span>
         </div>
       )}

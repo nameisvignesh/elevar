@@ -30,6 +30,48 @@ function getExtension(filename: string): string {
   return filename.slice(idx + 1).toLowerCase();
 }
 
+function escapeHtml(value: string): string {
+  const entities: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return value.replace(/[&<>"']/g, (character) => entities[character] || character);
+}
+
+function careerApplicationEmail(form: FormState, portfolioFilename: string) {
+  const subject = `Career application · ${form.role} · ${form.name}`;
+  const text = [
+    'ELEVAR  |  CAREER APPLICATION',
+    '',
+    'APPLICANT',
+    `Name: ${form.name}`,
+    `Email: ${form.email}`,
+    `Target role: ${form.role}`,
+    `LinkedIn: ${form.linkedin || 'Not provided'}`,
+    `Location: ${form.location || 'Not provided'}`,
+    '',
+    'PORTFOLIO',
+    `${portfolioFilename} (attached)`,
+    '',
+    'Reply directly to this email to contact the applicant.',
+  ].join('\n');
+  const row = (label: string, value: string) =>
+    `<tr><td style="width:130px;padding:11px 4px;border-bottom:1px solid #e8ebed;color:#737b80;font-size:12px">${label}</td><td style="padding:11px 4px;border-bottom:1px solid #e8ebed;color:#262b2e;font-size:13px;word-break:break-word">${escapeHtml(value || 'Not provided')}</td></tr>`;
+  const html = '<!doctype html><html><body style="margin:0;padding:28px 12px;background:#f2f4f5;font-family:Arial,Helvetica,sans-serif;color:#202326">' +
+    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center">' +
+    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#fff;border:1px solid #e2e6e8;border-radius:16px;overflow:hidden">' +
+    '<tr><td style="padding:24px 30px;border-bottom:1px solid #e8ebed"><div style="font-size:15px;font-weight:700;letter-spacing:.08em">ELEVAR</div><div style="margin-top:7px;color:#70777c;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">Career application</div></td></tr>' +
+    '<tr><td style="padding:26px 30px 10px"><h1 style="margin:0;font-size:22px;line-height:1.3">New candidate for ' + escapeHtml(form.role) + '</h1><p style="margin:9px 0 0;color:#626a70;font-size:14px;line-height:1.6">The candidate’s portfolio is attached. Reply to this email to follow up.</p></td></tr>' +
+    '<tr><td style="padding:12px 30px 24px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-top:1px solid #e8ebed">' +
+    row('Name', form.name) + row('Email', form.email) + row('Target role', form.role) + row('LinkedIn', form.linkedin) + row('Location', form.location) + row('Portfolio', portfolioFilename) +
+    '</table></td></tr><tr><td style="padding:16px 30px;background:#f7f8f8;color:#737b80;font-size:11px;line-height:1.6">This message was submitted through the Elevar careers page.</td></tr>' +
+    '</table></td></tr></table></body></html>';
+  return { subject, text, html };
+}
+
 export default function CareerPage() {
   const [form, setForm] = useState<FormState>({ name: '', email: '', linkedin: '', location: '', role: '' });
   const [portfolioFile, setPortfolioFile] = useState<File | null>(null);
@@ -95,7 +137,13 @@ export default function CareerPage() {
     setSuccessMessage(null);
 
     try {
+      const emailContent = careerApplicationEmail(form, portfolioFile.name);
       if (EMAILJS_CONFIGURED && formRef.current) {
+        const fields = formRef.current.elements;
+        (fields.namedItem('application_subject') as HTMLInputElement).value = emailContent.subject;
+        (fields.namedItem('reply_to') as HTMLInputElement).value = form.email;
+        (fields.namedItem('application_text') as HTMLInputElement).value = emailContent.text;
+        (fields.namedItem('application_html') as HTMLInputElement).value = emailContent.html;
         await emailjs.sendForm(
           EMAILJS_SERVICE_ID,
           EMAILJS_TEMPLATE_ID,
@@ -103,21 +151,9 @@ export default function CareerPage() {
           EMAILJS_PUBLIC_KEY
         );
       } else {
-        const body = [
-          'Career application',
-          '',
-          `Name: ${form.name}`,
-          `Email: ${form.email}`,
-          `Target role: ${form.role}`,
-          `LinkedIn: ${form.linkedin || 'Not provided'}`,
-          `Location: ${form.location || 'Not provided'}`,
-          '',
-          `Portfolio file to attach: ${portfolioFile.name}`,
-          'Please attach the portfolio file before sending this email.',
-        ].join('\n');
         window.location.href = `mailto:${APPLICATION_INBOX}?subject=${encodeURIComponent(
-          `Career Application: ${form.role} - ${form.name}`
-        )}&body=${encodeURIComponent(body)}`;
+          emailContent.subject
+        )}&body=${encodeURIComponent(`${emailContent.text}\n\nPlease attach the selected portfolio file before sending.`)}`;
         setSuccessMessage('Your email draft is ready. Attach your portfolio file before sending.');
         return;
       }
@@ -161,6 +197,10 @@ export default function CareerPage() {
           </div>
 
           <form ref={formRef} onSubmit={handleSubmit} className="form-grid">
+            <input type="hidden" name="application_subject" defaultValue="" />
+            <input type="hidden" name="reply_to" defaultValue="" />
+            <input type="hidden" name="application_text" defaultValue="" />
+            <input type="hidden" name="application_html" defaultValue="" />
             <div className="form-row">
               <div className="field">
                 <label htmlFor="name">Full Name *</label>

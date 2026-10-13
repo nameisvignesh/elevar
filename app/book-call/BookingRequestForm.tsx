@@ -9,6 +9,8 @@ import { BOOKING_TIMES, getIstToday, getSuggestedIstDate } from './bookingSlots'
 type SubmissionResult = {
   remaining: number;
   notificationSent: boolean;
+  spreadsheetUpdated: boolean;
+  excelAttached: boolean;
   agencyTaskCreated: boolean;
   agencyEmailImportant: boolean;
 };
@@ -82,6 +84,8 @@ export default function BookingRequestForm({ endpoint }: { endpoint: string }) {
       setSuccess({
         remaining: Number(result.remaining ?? 0),
         notificationSent,
+        spreadsheetUpdated: Boolean(result.agencySpreadsheetUpdated),
+        excelAttached: Boolean(result.agencyExcelAttached),
         agencyTaskCreated: Boolean(result.agencyTaskCreated),
         agencyEmailImportant: Boolean(result.agencyEmailImportant),
       });
@@ -117,9 +121,13 @@ export default function BookingRequestForm({ endpoint }: { endpoint: string }) {
             <span className="booking-success-mark" aria-hidden="true">✓</span>
             <h3>Request received</h3>
             <p>
-              {success.notificationSent
-                ? `${success.agencyTaskCreated ? 'Elevar’s follow-up task is ready. ' : ''}${success.agencyEmailImportant ? 'The request email is marked important. ' : ''}Your proposed time is not confirmed until Elevar replies.`
-                : 'Your request is saved. The email connection is not ready, so please email the studio to confirm your proposed time.'}
+              {success.spreadsheetUpdated
+                ? 'Your request has been added to Elevar’s booking spreadsheet. '
+                : 'Your request is saved, but the booking spreadsheet update could not be confirmed. Please contact the studio with your request details. '}
+              {success.excelAttached ? 'An updated Excel copy is attached to the agency notification. ' : ''}
+              {success.notificationSent && success.agencyTaskCreated ? 'Elevar’s follow-up task is ready. ' : ''}
+              {success.notificationSent && success.agencyEmailImportant ? 'The request email is marked important. ' : ''}
+              {success.notificationSent ? 'Your proposed time is not confirmed until Elevar replies.' : 'The email notification could not be confirmed; Elevar will review the saved request.'}
             </p>
             <p className="booking-limit-note">
               {success.remaining > 0

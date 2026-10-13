@@ -20,12 +20,16 @@ browser build.
 
 1. Create an EmailJS email service and a career-application template.
 2. Set the template recipient to `elevardigitalstudio@gmail.com` and include
-   template fields for `name`, `email`, `role`, `linkedin`, and `location`.
-3. In the template's **Attachments** tab, add a **Form File Attachment** whose
+   the subject `{{application_subject}}` and Reply-To `{{reply_to}}`.
+3. Use `{{{application_html}}}` as the HTML message body. The careers page
+   builds a clean, formatted summary and safely escapes applicant-entered text.
+   `{{application_text}}` is also supplied for templates that need a plain-text
+   copy.
+4. In the template's **Attachments** tab, add a **Form File Attachment** whose
    parameter name is `portfolio`.
-4. Add the service ID, template ID, and public key locally using the variable
+5. Add the service ID, template ID, and public key locally using the variable
    names in `.env.example`.
-5. Add each value as a GitHub repository secret with the same variable name,
+6. Add each value as a GitHub repository secret with the same variable name,
    then rebuild or rerun the Pages workflow.
 
 The portfolio upload is limited to 1.5 MB and checked in the browser. Until
@@ -56,13 +60,18 @@ email before it is booked.
    `CLERK_ISSUER_URL` as a Supabase Function secret, then deploy with
    `supabase functions deploy book-call`.
 5. To send an important email and create a Google Task automatically, create an
-   Apps Script project, copy `google-apps-script/Code.gs` into its editor, and
-   add the **Tasks API** under Services. In Project Settings, add script
+   Apps Script project and copy `google-apps-script/Code.gs` into its editor.
+   The script creates the private `Elevar call requests` spreadsheet in the
+   agency account's Drive on the first booking, appends each request once, and
+   attaches a refreshed `.xlsx` export to the notification email. It also adds
+   the proposed date/time and confirmation status to the sheet. Add the
+   **Tasks API** under Services. In Project Settings, add script
    properties `AGENCY_EMAIL` (`elevardigitalstudio@gmail.com`) and
    `BOOKING_WEBHOOK_TOKEN` (a long random secret). Deploy it as a web app that
    runs as the agency account and accepts requests from anyone; the script
-   checks the secret on every request. The owner must authorize Gmail and Tasks
-   access. Copy the deployed `/exec` URL.
+   checks the secret on every request. The owner must authorize Gmail, Sheets,
+   Drive, and Tasks access. The spreadsheet ID is saved automatically in script
+   properties; do not make the workbook public. Copy the deployed `/exec` URL.
 6. Set Supabase Function secrets `GOOGLE_APPS_SCRIPT_URL` to that `/exec` URL
    and `GOOGLE_APPS_SCRIPT_TOKEN` to the exact same value as
    `BOOKING_WEBHOOK_TOKEN`, then deploy the function again. Keep both values on
@@ -77,12 +86,14 @@ email before it is booked.
    rerun the Pages deployment after Clerk, Supabase, and EmailJS are configured.
 
 Until Clerk and Supabase are configured in the build and the function is
-deployed, the page shows the email fallback with a date/time picker. Requests
-accepted by the function remain stored even if a notification fails. With Apps
-Script configured, Elevar receives an email marked important and a Google Task
-for each request. Google Tasks stores a due date, not a due time, so the exact
-IST time is included in the task title and notes. The task is for review; this
-flow does not create a calendar event or confirm the call to the client.
+deployed, the page shows an email fallback with a proposed date/time picker.
+Requests accepted by the function remain stored even if a notification fails.
+With Apps Script configured, each request is appended to the private agency
+spreadsheet, and Elevar receives a formatted email marked important with an
+updated Excel workbook attached and a Google Task for review. Google Tasks
+stores a due date, not a due time, so the exact IST time is included in the task
+title and notes. The task is for review; this flow does not create a calendar
+event or confirm the call to the client.
 
 ## GitHub Pages build
 
