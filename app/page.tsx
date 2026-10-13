@@ -35,7 +35,7 @@ import React, {
   useState,
 } from 'react';
 
-import { CustomBundleButton } from './components/CustomBundleButton';
+import { CustomBundleLink } from './components/CustomBundleLink';
 import { withBasePath } from '@/lib/paths';
 
 /* =========================================================
@@ -179,16 +179,16 @@ const work: WorkVideoItem[] = [
 ];
 
 const softwareLogos = [
-  { name: 'After Effects', mark: 'Ae', className: 'after-effects' },
-  { name: 'Premiere Pro', mark: 'Pr', className: 'premiere-pro' },
-  { name: 'DaVinci Resolve', mark: 'DaVinci Resolve', className: 'davinci' },
-  { name: 'CapCut', mark: 'CapCut', className: 'capcut' },
+  { name: 'After Effects', className: 'after-effects' },
+  { name: 'Premiere Pro', className: 'premiere-pro' },
+  { name: 'DaVinci Resolve', className: 'davinci' },
+  { name: 'CapCut', className: 'capcut' },
 ];
 
 const videoAiLogos = [
-  { name: 'HeyGen', mark: 'HeyGen', className: 'heygen' },
-  { name: 'Higgsfield AI', mark: 'Higgsfield AI', className: 'higgsfield' },
-  { name: 'Google Flow', mark: 'Google Flow', className: 'google-flow' },
+  { name: 'HeyGen', className: 'heygen' },
+  { name: 'Higgsfield AI', className: 'higgsfield' },
+  { name: 'Google Flow', className: 'google-flow' },
 ];
 
 /* =========================================================
@@ -333,12 +333,13 @@ export default function Home() {
 
               if (service.custom) {
                 return (
-                  <CustomBundleButton
+                  <CustomBundleLink
                     key={service.title}
-                    className="plain-action"
+                    className="custom-bundle-link"
+                    aria-label="Get a custom bundle quote"
                   >
                     {card}
-                  </CustomBundleButton>
+                  </CustomBundleLink>
                 );
               }
 
@@ -485,7 +486,9 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <b aria-hidden="true">↗</b>
+                  <b>
+                    100+ <span className="growth-arrow" aria-hidden="true">↗</span>
+                  </b>
 
                   <span>
                     Growth rate
@@ -552,18 +555,90 @@ function LogoGroup({
   logos,
 }: {
   title: string;
-  logos: { name: string; mark: string; className: string }[];
+  logos: { name: string; className: string }[];
 }) {
   return (
     <div className="toolkit-group">
       <h2>{title}</h2>
       <div className="brand-logo-list">
         {logos.map((logo) => (
-          <div className={`brand-logo ${logo.className}`} key={logo.name} role="img" aria-label={logo.name}>
-            {logo.mark}
-          </div>
+          <BrandLogo key={logo.name} name={logo.name} className={logo.className} />
         ))}
       </div>
+    </div>
+  );
+}
+
+function BrandLogo({ name, className }: { name: string; className: string }) {
+  const label = <span className="brand-logo-name">{name}</span>;
+
+  if (className === 'after-effects' || className === 'premiere-pro') {
+    const short = className === 'after-effects' ? 'Ae' : 'Pr';
+    return (
+      <div className={`brand-logo ${className}`} role="img" aria-label={name}>
+        <span className="adobe-app-icon" aria-hidden="true">{short}</span>
+        {label}
+      </div>
+    );
+  }
+
+  if (className === 'davinci') {
+    return (
+      <div className={`brand-logo ${className}`} role="img" aria-label={name}>
+        <svg className="davinci-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M24 5C16 5 10 11 10 19h14V5Z" fill="#ee3e37" />
+          <path d="M29 6c8 2 13 9 13 17H28l1-17Z" fill="#f5b52d" />
+          <path d="M43 28c-2 8-9 13-17 13V27l17 1Z" fill="#4eb95b" />
+          <path d="M19 42C11 40 6 33 6 25h15l-2 17Z" fill="#4185d6" />
+          <circle cx="24" cy="24" r="6" fill="#f7f7f5" />
+        </svg>
+        {label}
+      </div>
+    );
+  }
+
+  if (className === 'capcut') {
+    return (
+      <div className={`brand-logo ${className}`} role="img" aria-label={name}>
+        <svg className="capcut-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M10 13h28L10 35h28M10 21h28L10 43h28" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        {label}
+      </div>
+    );
+  }
+
+  if (className === 'heygen') {
+    return (
+      <div className={`brand-logo ${className}`} role="img" aria-label={name}>
+        <svg className="heygen-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <defs><linearGradient id="heygen-gradient" x1="0" x2="1" y1="1" y2="0"><stop stopColor="#7357ff" /><stop offset=".52" stopColor="#ec63c5" /><stop offset="1" stopColor="#ffb34a" /></linearGradient></defs>
+          <circle cx="24" cy="24" r="21" fill="url(#heygen-gradient)" />
+          <path d="M17 30V18m0 6h14m0-6v12" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" />
+        </svg>
+        {label}
+      </div>
+    );
+  }
+
+  if (className === 'google-flow') {
+    return (
+      <div className={`brand-logo ${className}`} role="img" aria-label={name}>
+        <svg className="google-flow-mark" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M43 24.5c0-1.5-.1-2.8-.4-4.1H24v7.8h10.7a9.2 9.2 0 0 1-4 6v5.1h6.5c3.8-3.5 5.8-8.6 5.8-14.8Z" fill="#4285f4" />
+          <path d="M24 44c5.4 0 9.9-1.8 13.2-4.8l-6.5-5.1c-1.8 1.2-4 2-6.7 2-5.1 0-9.4-3.5-10.9-8.2H6.4v5.3A20 20 0 0 0 24 44Z" fill="#34a853" />
+          <path d="M13.1 27.9a12 12 0 0 1 0-7.8v-5.3H6.4a20 20 0 0 0 0 18.4l6.7-5.3Z" fill="#fbbc05" />
+          <path d="M24 12c3 0 5.7 1 7.8 3.1l5.8-5.8C34.1 6.1 29.4 4 24 4A20 20 0 0 0 6.4 14.8l6.7 5.3C14.6 15.5 18.9 12 24 12Z" fill="#ea4335" />
+        </svg>
+        <span className="brand-logo-name"><span className="google-word">Google</span> Flow</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`brand-logo ${className}`} role="img" aria-label={name}>
+      <span className="higgsfield-mark" aria-hidden="true">H</span>
+      {label}
     </div>
   );
 }

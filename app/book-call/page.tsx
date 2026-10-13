@@ -1,37 +1,11 @@
-'use client';
-
-import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Clock3, Mail } from 'lucide-react';
+import BookingRequestForm from './BookingRequestForm';
 
-const GOOGLE_FORM_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSfbhMurG1LcPQBiAXaukjG8wT1l8s3En7ltOHVspj8s-8z_Aw/viewform?embedded=true';
 const CONTACT_EMAIL = 'elevardigitalstudio@gmail.com';
-const MAILTO_URL = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
-  'Request a strategy call'
-)}&body=${encodeURIComponent(
-  'Hi Elevar team,\n\nI would like to book a strategy call.\n\nName:\nEmail:\nPreferred time:'
-)}`;
+const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 export default function BookCall() {
-  const [formLoaded, setFormLoaded] = useState(false);
-  const [formFailed, setFormFailed] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (formLoaded) return;
-    timeoutRef.current = setTimeout(() => {
-      setFormFailed(true);
-    }, 8000);
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [formLoaded]);
-
-  function handleFormLoad() {
-    setFormLoaded(true);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-  }
-
   return (
     <main className="booking-page">
       <section className="container booking-layout">
@@ -57,26 +31,22 @@ export default function BookCall() {
             <p>Share a few details and we’ll get back to you.</p>
           </div>
 
-          {formFailed ? (
-            <div className="booking-fallback" role="status">
-              <p>The booking form is taking longer than expected to load.</p>
-              <a className="btn btn-primary" href={MAILTO_URL}>
+          {clerkConfigured && supabaseUrl ? (
+            <BookingRequestForm endpoint={`${supabaseUrl.replace(/\/$/, '')}/functions/v1/book-call`} />
+          ) : (
+            <div className="booking-setup-note" role="status">
+              <p>Online booking is being connected. Please email us and we’ll arrange your call.</p>
+              <a
+                className="btn btn-primary"
+                href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Request a strategy call')}`}
+              >
                 Email us to book <ArrowUpRight size={16} />
               </a>
             </div>
-          ) : (
-            <iframe
-              className="booking-frame"
-              src={GOOGLE_FORM_URL}
-              title="Request a free Elevar strategy call"
-              onLoad={handleFormLoad}
-              onError={() => setFormFailed(true)}
-              loading="lazy"
-            />
           )}
 
           <p className="booking-form-note">
-            Prefer email? <a href={MAILTO_URL}>{CONTACT_EMAIL}</a>
+            Prefer email? <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
           </p>
         </section>
       </section>

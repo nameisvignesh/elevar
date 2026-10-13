@@ -63,11 +63,25 @@ export function Navigation() {
             return (
               <Link
                 key={link.href}
-                href={link.href}
+                href={hash ? `${withBasePath('/')}#${hash}` : withBasePath(link.href)}
                 className={isActive ? 'active' : ''}
-                onClick={() => {
-                  setActiveHash(hash ? `#${hash}` : '');
+                onClick={(event) => {
                   setOpen(false);
+              if (!hash) {
+                setActiveHash('');
+                return;
+              }
+
+              if (pathname === '/') {
+                event.preventDefault();
+                const nextHash = `#${hash}`;
+                window.history.pushState(null, '', `${window.location.pathname}${nextHash}`);
+                setActiveHash(nextHash);
+                document.getElementById(hash)?.scrollIntoView({
+                  behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+                  block: 'start',
+                });
+              }
                 }}
               >
                 {link.label}

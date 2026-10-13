@@ -3,9 +3,9 @@ import { Poppins } from 'next/font/google';
 import Footer from './components/Footer';
 import './globals.css';
 import { Navigation } from './components/Navigation';
-import { ChatbotButton } from './components/ChatbotButton';
 import { withBasePath } from '@/lib/paths';
 import { AuthProvider } from './components/AuthProvider';
+import { CursorAtmosphere } from './components/CursorAtmosphere';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -40,8 +40,8 @@ export default function RootLayout({
   const appShell = (
     <>
       <Navigation />
+      <CursorAtmosphere />
       <div id="main-content">{children}</div>
-      <ChatbotButton />
       <Footer />
     </>
   );

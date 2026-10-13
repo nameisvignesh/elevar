@@ -34,9 +34,39 @@ the applicant to attach their portfolio before sending.
 
 ## Book a call
 
-The booking page embeds the existing Google Form and offers a prefilled email
-draft if the embedded form does not load. In the Google Form settings, allow
-responses from anyone with the link.
+The booking page requires a signed-in Clerk account and saves each request to a
+private Supabase table. An account can submit three requests per India Standard
+Time day, so one client can register requests for multiple businesses. The
+limit is enforced in a database transaction, including when submissions arrive
+at the same time.
+
+1. Create a Supabase project and set the GitHub repository variable
+   `NEXT_PUBLIC_SUPABASE_URL` to its project URL. Set the same value locally in
+   `.env.local` when testing.
+2. In Clerk, copy the issuer URL from the instance's session token (`iss` claim)
+   and configure `CLERK_ISSUER_URL` as a Supabase Function secret. The function
+   verifies Clerk session tokens against that issuer's JWKS endpoint.
+3. Apply `supabase/migrations/20261013000000_book_call_requests.sql` to the
+   project. The `private.book_call_requests` table has no client access; only
+   the function's service role can create entries.
+4. Link this repository to the Supabase project and deploy the function:
+   `supabase link --project-ref <project-ref>`, `supabase db push`, then
+   `supabase functions deploy book-call`.
+5. Set Supabase Function secrets `CLERK_ISSUER_URL` to the Clerk session token
+   issuer and `ALLOWED_ORIGINS` to include `https://nameisvignesh.github.io` and
+   any development origins. Deploy the function again after setting them.
+6. Create a second EmailJS template for booking requests with template values
+   `name`, `email`, `business_name`, `website`, `service`, `project_details`,
+   and `request_id`; set its recipient to `elevardigitalstudio@gmail.com` and
+   use `email` as Reply-To. Add its ID as the GitHub Actions secret
+   `NEXT_PUBLIC_EMAILJS_BOOKING_TEMPLATE_ID`.
+7. Add `NEXT_PUBLIC_SUPABASE_URL` as a GitHub Actions repository variable and
+   rerun the Pages deployment after the Clerk publishable key and EmailJS
+   service, public key, and booking template ID are configured.
+
+Until Clerk and Supabase are configured in the build and the function is
+deployed, the page shows the email contact fallback. Requests accepted by the
+function remain stored in Supabase even if the EmailJS notification fails.
 
 ## GitHub Pages build
 
