@@ -16,7 +16,6 @@ import { ThemeToggle } from './ThemeToggle';
 import { withBasePath } from '@/lib/paths';
 
 const CLERK_CONFIGURED = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
-const ACCOUNT_EMAIL = 'elevardigitalstudio@gmail.com';
 
 export function Navigation() {
   const pathname = usePathname();
@@ -108,14 +107,7 @@ export function Navigation() {
                 <UserButton />
               </SignedIn>
             </>
-          ) : (
-            <a
-              className="nav-account-link"
-              href={`mailto:${ACCOUNT_EMAIL}?subject=${encodeURIComponent('Account access')}`}
-            >
-              Account access
-            </a>
-          )}
+          ) : null}
           <ThemeToggle />
           <button
             className="mobile-menu"

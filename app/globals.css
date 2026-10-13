@@ -2006,16 +2006,14 @@ html.light .brand-mark {
   gap: 24px;
 }
 
-.nav-links a,
-.nav-account-link {
+.nav-links a {
   color: var(--muted);
   font-size: 0.82rem;
   transition: color 0.18s ease;
 }
 
 .nav-links a:hover,
-.nav-links a.active,
-.nav-account-link:hover {
+.nav-links a.active {
   color: var(--text);
 }
 
@@ -2034,13 +2032,6 @@ html.light .brand-mark {
   min-height: 38px;
   padding: 0 14px;
   font-size: 0.78rem;
-}
-
-.nav-account-link {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 9px 13px;
-  white-space: nowrap;
 }
 
 .nav-book-call {
@@ -2787,10 +2778,6 @@ html.light .brand-mark {
     margin: 6px 0;
   }
 
-  .nav-account-link {
-    display: none;
-  }
-
   .nav-auth-button {
     min-height: 36px;
     padding-inline: 10px;
@@ -2859,10 +2846,6 @@ html.light .brand-mark {
 
   .nav-book-call {
     margin: 6px 0;
-  }
-
-  .nav-account-link {
-    display: none;
   }
 
   .nav-actions {
