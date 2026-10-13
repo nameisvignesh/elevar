@@ -4,8 +4,14 @@ import { FormEvent, useState } from 'react';
 import { SignInButton, SignUpButton, SignedIn, SignedOut, useAuth, useUser } from '@clerk/clerk-react';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
 import emailjs from '@emailjs/browser';
+import { BOOKING_TIMES, getIstToday, getSuggestedIstDate } from './bookingSlots';
 
-type SubmissionResult = { remaining: number; notificationSent: boolean };
+type SubmissionResult = {
+  remaining: number;
+  notificationSent: boolean;
+  agencyTaskCreated: boolean;
+  agencyEmailImportant: boolean;
+};
 const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '';
 const EMAILJS_BOOKING_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_BOOKING_TEMPLATE_ID || '';
 const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || '';
@@ -41,6 +47,8 @@ export default function BookingRequestForm({ endpoint }: { endpoint: string }) {
           website: form.get('website'),
           service: form.get('service'),
           projectDetails: form.get('projectDetails'),
+          proposedDate: form.get('proposedDate'),
+          proposedTime: form.get('proposedTime'),
         }),
       });
 
@@ -52,8 +60,8 @@ export default function BookingRequestForm({ endpoint }: { endpoint: string }) {
         throw new Error(result.error || 'Your request could not be sent. Please try again.');
       }
 
-      let notificationSent = false;
-      if (EMAILJS_SERVICE_ID && EMAILJS_BOOKING_TEMPLATE_ID && EMAILJS_PUBLIC_KEY) {
+      let notificationSent = Boolean(result.agencyEmailSent);
+      if (!notificationSent && EMAILJS_SERVICE_ID && EMAILJS_BOOKING_TEMPLATE_ID && EMAILJS_PUBLIC_KEY) {
         try {
           await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_BOOKING_TEMPLATE_ID, {
             name: form.get('name'),
@@ -62,6 +70,8 @@ export default function BookingRequestForm({ endpoint }: { endpoint: string }) {
             website: form.get('website') || 'Not provided',
             service: form.get('service'),
             project_details: form.get('projectDetails'),
+            proposed_date: form.get('proposedDate'),
+            proposed_time: `${form.get('proposedTime')} IST`,
             request_id: result.requestId,
           }, EMAILJS_PUBLIC_KEY);
           notificationSent = true;
@@ -69,7 +79,12 @@ export default function BookingRequestForm({ endpoint }: { endpoint: string }) {
           console.error('The booking request was saved but its email notification failed.', notificationError);
         }
       }
-      setSuccess({ remaining: Number(result.remaining ?? 0), notificationSent });
+      setSuccess({
+        remaining: Number(result.remaining ?? 0),
+        notificationSent,
+        agencyTaskCreated: Boolean(result.agencyTaskCreated),
+        agencyEmailImportant: Boolean(result.agencyEmailImportant),
+      });
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : 'Your request could not be sent. Please try again.');
     } finally {
@@ -101,7 +116,11 @@ export default function BookingRequestForm({ endpoint }: { endpoint: string }) {
           <div className="booking-success" role="status">
             <span className="booking-success-mark" aria-hidden="true">✓</span>
             <h3>Request received</h3>
-            <p>{success.notificationSent ? 'We’ll follow up by email about this business.' : 'Your request is saved. Please email us as well so we can arrange your call.'}</p>
+            <p>
+              {success.notificationSent
+                ? `${success.agencyTaskCreated ? 'Elevar’s follow-up task is ready. ' : ''}${success.agencyEmailImportant ? 'The request email is marked important. ' : ''}Your proposed time is not confirmed until Elevar replies.`
+                : 'Your request is saved. The email connection is not ready, so please email the studio to confirm your proposed time.'}
+            </p>
             <p className="booking-limit-note">
               {success.remaining > 0
                 ? `${success.remaining} ${success.remaining === 1 ? 'request' : 'requests'} left for your account today.`
@@ -146,6 +165,16 @@ export default function BookingRequestForm({ endpoint }: { endpoint: string }) {
                 Business website <span className="booking-optional">(optional)</span>
                 <input name="website" type="url" maxLength={2048} placeholder="https://" />
               </label>
+              <label>
+                Proposed date <span>(IST)</span>
+                <input name="proposedDate" type="date" min={getIstToday()} defaultValue={getSuggestedIstDate()} required />
+              </label>
+              <label>
+                Proposed time <span>(IST)</span>
+                <select name="proposedTime" defaultValue="10:00" required>
+                  {BOOKING_TIMES.map((time) => <option key={time} value={time}>{time}</option>)}
+                </select>
+              </label>
               <label className="booking-field-wide">
                 What do you need help with? <span aria-hidden="true">*</span>
                 <select name="service" defaultValue="" required>
@@ -164,6 +193,7 @@ export default function BookingRequestForm({ endpoint }: { endpoint: string }) {
               </label>
             </div>
 
+            <p className="booking-limit-note">Your selected slot is a proposal. Elevar will confirm it by email.</p>
             <p className="booking-limit-note">Up to three requests per account each day, resetting at midnight IST. Register each business separately.</p>
             {error && <p className="booking-error" role="alert">{error}</p>}
             <button className="btn btn-primary booking-submit" type="submit" disabled={submitting}>

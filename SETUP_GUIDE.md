@@ -37,8 +37,9 @@ the applicant to attach their portfolio before sending.
 The booking page requires a signed-in Clerk account and saves each request to a
 private Supabase table. An account can submit three requests per India Standard
 Time day, so one client can register requests for multiple businesses. The
-limit is enforced in a database transaction, including when submissions arrive
-at the same time.
+limit is enforced in a database transaction, including concurrent requests.
+Each request includes a proposed date and time; Elevar must confirm the slot by
+email before it is booked.
 
 1. Create a Supabase project and set the GitHub repository variable
    `NEXT_PUBLIC_SUPABASE_URL` to its project URL. Set the same value locally in
@@ -46,27 +47,42 @@ at the same time.
 2. In Clerk, copy the issuer URL from the instance's session token (`iss` claim)
    and configure `CLERK_ISSUER_URL` as a Supabase Function secret. The function
    verifies Clerk session tokens against that issuer's JWKS endpoint.
-3. Apply `supabase/migrations/20261013000000_book_call_requests.sql` to the
-   project. The `private.book_call_requests` table has no client access; only
-   the function's service role can create entries.
-4. Link this repository to the Supabase project and deploy the function:
-   `supabase link --project-ref <project-ref>`, `supabase db push`, then
+3. Link this repository to the Supabase project and apply **all** migrations:
+   `supabase link --project-ref <project-ref>`, then `supabase db push`. This
+   creates the private request table, the atomic daily limit, and proposed-slot
+   fields. Only the function's service role can write request records.
+4. Configure `ALLOWED_ORIGINS` to include
+   `https://nameisvignesh.github.io` and any development origins. Set
+   `CLERK_ISSUER_URL` as a Supabase Function secret, then deploy with
    `supabase functions deploy book-call`.
-5. Set Supabase Function secrets `CLERK_ISSUER_URL` to the Clerk session token
-   issuer and `ALLOWED_ORIGINS` to include `https://nameisvignesh.github.io` and
-   any development origins. Deploy the function again after setting them.
-6. Create a second EmailJS template for booking requests with template values
-   `name`, `email`, `business_name`, `website`, `service`, `project_details`,
-   and `request_id`; set its recipient to `elevardigitalstudio@gmail.com` and
-   use `email` as Reply-To. Add its ID as the GitHub Actions secret
+5. To send an important email and create a Google Task automatically, create an
+   Apps Script project, copy `google-apps-script/Code.gs` into its editor, and
+   add the **Tasks API** under Services. In Project Settings, add script
+   properties `AGENCY_EMAIL` (`elevardigitalstudio@gmail.com`) and
+   `BOOKING_WEBHOOK_TOKEN` (a long random secret). Deploy it as a web app that
+   runs as the agency account and accepts requests from anyone; the script
+   checks the secret on every request. The owner must authorize Gmail and Tasks
+   access. Copy the deployed `/exec` URL.
+6. Set Supabase Function secrets `GOOGLE_APPS_SCRIPT_URL` to that `/exec` URL
+   and `GOOGLE_APPS_SCRIPT_TOKEN` to the exact same value as
+   `BOOKING_WEBHOOK_TOKEN`, then deploy the function again. Keep both values on
+   the server; never place them in GitHub Pages/browser variables.
+7. As a backup email notification, create an EmailJS booking template with
+   fields `name`, `email`, `business_name`, `website`, `service`,
+   `project_details`, `proposed_date`, `proposed_time`, and `request_id`. Set
+   its recipient to `elevardigitalstudio@gmail.com` and use `email` as
+   Reply-To. Add its ID as the GitHub Actions secret
    `NEXT_PUBLIC_EMAILJS_BOOKING_TEMPLATE_ID`.
-7. Add `NEXT_PUBLIC_SUPABASE_URL` as a GitHub Actions repository variable and
-   rerun the Pages deployment after the Clerk publishable key and EmailJS
-   service, public key, and booking template ID are configured.
+8. Add `NEXT_PUBLIC_SUPABASE_URL` as a GitHub Actions repository variable and
+   rerun the Pages deployment after Clerk, Supabase, and EmailJS are configured.
 
 Until Clerk and Supabase are configured in the build and the function is
-deployed, the page shows the email contact fallback. Requests accepted by the
-function remain stored in Supabase even if the EmailJS notification fails.
+deployed, the page shows the email fallback with a date/time picker. Requests
+accepted by the function remain stored even if a notification fails. With Apps
+Script configured, Elevar receives an email marked important and a Google Task
+for each request. Google Tasks stores a due date, not a due time, so the exact
+IST time is included in the task title and notes. The task is for review; this
+flow does not create a calendar event or confirm the call to the client.
 
 ## GitHub Pages build
 

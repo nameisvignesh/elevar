@@ -1,5 +1,6 @@
-import { ArrowUpRight, Clock3, Mail } from 'lucide-react';
+import { Clock3, Mail } from 'lucide-react';
 import BookingRequestForm from './BookingRequestForm';
+import EmailBookingDialog from './EmailBookingDialog';
 
 const CONTACT_EMAIL = 'elevardigitalstudio@gmail.com';
 const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
@@ -35,13 +36,8 @@ export default function BookCall() {
             <BookingRequestForm endpoint={`${supabaseUrl.replace(/\/$/, '')}/functions/v1/book-call`} />
           ) : (
             <div className="booking-setup-note" role="status">
-              <p>Online booking is being connected. Please email us and we’ll arrange your call.</p>
-              <a
-                className="btn btn-primary"
-                href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Request a strategy call')}`}
-              >
-                Email us to book <ArrowUpRight size={16} />
-              </a>
+              <p>Choose a proposed date and time. Your call is booked once Elevar confirms by email.</p>
+              <EmailBookingDialog />
             </div>
           )}
 

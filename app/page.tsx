@@ -394,7 +394,7 @@ export default function Home() {
                   overflow: 'hidden',
                 }}
               >
-                <WorkPreviewVideo item={item} />
+                <WorkPreviewVideo item={item} compact />
 
                 <Link
                   href="/selected-work"
@@ -611,12 +611,9 @@ function BrandLogo({ name, className }: { name: string; className: string }) {
   if (className === 'heygen') {
     return (
       <div className={`brand-logo ${className}`} role="img" aria-label={name}>
-        <svg className="heygen-mark" viewBox="0 0 48 48" aria-hidden="true">
-          <defs><linearGradient id="heygen-gradient" x1="0" x2="1" y1="1" y2="0"><stop stopColor="#7357ff" /><stop offset=".52" stopColor="#ec63c5" /><stop offset="1" stopColor="#ffb34a" /></linearGradient></defs>
-          <circle cx="24" cy="24" r="21" fill="url(#heygen-gradient)" />
-          <path d="M17 30V18m0 6h14m0-6v12" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" />
-        </svg>
-        {label}
+        <span className="brand-logo-image heygen-logo-image">
+          <Image src={withBasePath('/brands/heygen.png')} alt="" width={160} height={80} />
+        </span>
       </div>
     );
   }
@@ -637,7 +634,9 @@ function BrandLogo({ name, className }: { name: string; className: string }) {
 
   return (
     <div className={`brand-logo ${className}`} role="img" aria-label={name}>
-      <span className="higgsfield-mark" aria-hidden="true">H</span>
+      <span className="brand-logo-image higgsfield-logo-image">
+        <Image src={withBasePath('/brands/higgsfield.png')} alt="" width={56} height={56} />
+      </span>
       {label}
     </div>
   );
@@ -649,8 +648,10 @@ function BrandLogo({ name, className }: { name: string; className: string }) {
 
 function WorkPreviewVideo({
   item,
+  compact = false,
 }: {
   item: WorkVideoItem;
+  compact?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -661,7 +662,7 @@ function WorkPreviewVideo({
   const [volume, setVolume] = useState(1);
   /* Derived from the video's intrinsic dimensions so the card renders in
      its original ratio (no cropping). */
-  const aspectRatio = '9 / 16';
+  const aspectRatio = compact ? '16 / 9' : '9 / 16';
 
   /* Force DOM sync for muted property */
   useEffect(() => {
@@ -808,6 +809,7 @@ function WorkPreviewVideo({
         overflow: 'hidden',
         background: '#000',
         borderRadius: 'inherit',
+        pointerEvents: 'none',
         zIndex: 3, /* Keeps controls above overlay link */
       }}
     >
@@ -846,6 +848,13 @@ function WorkPreviewVideo({
           pointerEvents: 'none', /* Clicks pass through to card link behind */
         }}
       />
+
+      {compact && (
+        <div className="work-preview-brand" aria-hidden="true" style={{ pointerEvents: 'none' }}>
+          <Image src={withBasePath('/logo.svg')} alt="" width={18} height={18} />
+          <span>Elevar</span>
+        </div>
+      )}
 
       {/* DARK GRADIENT */}
       <div
