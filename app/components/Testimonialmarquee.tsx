@@ -1,6 +1,6 @@
 'use client';
 
-import { BadgeCheck } from 'lucide-react';
+import { Quote } from 'lucide-react';
 
 const testimonials = [
   {
@@ -10,12 +10,12 @@ const testimonials = [
   },
   {
     id: 2,
-    text: "Their editing goes beyond making videos look good. They understand audience retention, distribution, and what it takes to make content perform.",
+    text: 'Their editing goes beyond making videos look good. They understand audience retention, distribution, and what it takes to make content perform.',
     company: 'Asanaramana Yoga Center',
   },
   {
     id: 3,
-    text: "The team at Elevar has been instrumental in helping us grow our personal brand. Their strategic approach to content creation and distribution has yielded impressive results.",
+    text: 'The team at Elevar has been instrumental in helping us grow our personal brand. Their strategic approach to content creation and distribution has yielded impressive results.',
     company: 'Mosa Unisex Saloon',
   },
 ];
@@ -23,31 +23,19 @@ const testimonials = [
 export default function TestimonialMarquee() {
   return (
     <section className="testimonial-section">
-      {/* Square pattern background */}
-      <div className="testimonial-pattern" aria-hidden="true" />
-
       <div className="container">
         <div className="section-heading centered">
+          <span className="eyebrow">Partner feedback</span>
           <h2>What Our Partners Say</h2>
         </div>
-      </div>
 
-      {/* Single pass marquee — pauses on hover */}
-      <div className="testimonial-marquee">
-        <div className="testimonial-marquee-track">
+        <div className="testimonial-grid">
           {testimonials.map((testimonial) => (
-            <div
-              key={testimonial.id}
-              className="testimonial-card tilt-card"
-            >
-              <div className="testimonial-header">
-                <div className="testimonial-meta">
-                  <BadgeCheck size={16} />
-                  <span>{testimonial.company}</span>
-                </div>
-              </div>
-              <p>"{testimonial.text}"</p>
-            </div>
+            <article className="testimonial-card" key={testimonial.id}>
+              <Quote size={22} aria-hidden="true" />
+              <blockquote>{testimonial.text}</blockquote>
+              <p className="testimonial-company">{testimonial.company}</p>
+            </article>
           ))}
         </div>
       </div>

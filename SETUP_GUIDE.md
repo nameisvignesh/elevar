@@ -1,43 +1,45 @@
-# Google Meet Integration Setup Guide
+# Production integrations
 
-## What Changed?
+Elevar is exported as a static site to GitHub Pages. Browser integrations must
+therefore use hosted providers; Next.js API routes are not available on the live
+site.
 
-The backend API route (`/api/booking`) now:
-1. **Creates a Google Calendar event** on `elevardigitalstudio@gmail.com`'s calendar
-2. **Auto-generates a Google Meet link** via `conferenceData.createRequest`
-3. **Sends calendar email invites** to both the client AND `elevardigitalstudio@gmail.com` via `sendUpdates: 'all'`
-4. **Returns the Meet link** to the frontend for display
+## Clerk login and signup
 
-## Prerequisites
+1. Create a Clerk application and enable the sign-in methods you want to offer.
+2. Add its **publishable key** to the local environment as
+   `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`.
+3. Add the same value to the GitHub repository secret with that exact name.
+4. Rebuild or rerun the **Deploy Next.js site to Pages** workflow.
 
-1. **Google Cloud Project** with Google Calendar API enabled
-2. **Google Workspace account** (Business Standard or higher) for `elevardigitalstudio@gmail.com`
-3. **Service Account** with Domain-Wide Delegation enabled
-4. **Authorize the scope** in Google Admin Console:
-   - Go to: Security > Access and data control > API controls > Domain-wide delegation
-   - Add your service account client ID
-   - Add scope: `https://www.googleapis.com/auth/calendar`
+The navigation uses Clerk's sign-up, sign-in, and user profile components. This
+site uses the client integration only; do not add a Clerk secret key to the
+browser build.
 
-## Required NPM Packages
+## Career applications with EmailJS
 
-```bash
-npm install googleapis uuid
-npm install -D @types/uuid
-```
+1. Create an EmailJS email service and a career-application template.
+2. Set the template recipient to `elevardigitalstudio@gmail.com` and include
+   template fields for `name`, `email`, `role`, `linkedin`, and `location`.
+3. In the template's **Attachments** tab, add a **Form File Attachment** whose
+   parameter name is `portfolio`.
+4. Add the service ID, template ID, and public key locally using the variable
+   names in `.env.example`.
+5. Add each value as a GitHub repository secret with the same variable name,
+   then rebuild or rerun the Pages workflow.
 
-## How It Works
+The portfolio upload is limited to 1.5 MB and checked in the browser. Until
+EmailJS is configured, the career form opens a prefilled email draft and asks
+the applicant to attach their portfolio before sending.
 
-| Step | Action | Result |
-|------|--------|--------|
-| 1 | Client fills form & submits | Frontend calls `/api/booking` |
-| 2 | Backend creates Calendar event | Event appears on Elevar's calendar |
-| 3 | Backend requests Meet conference | Google auto-generates `meet.google.com/xxx` link |
-| 4 | Backend sets `sendUpdates: 'all'` | Gmail sends invites to BOTH emails automatically |
-| 5 | Frontend displays Meet link | Client can copy/join immediately |
+## Book a call
 
-## Important Notes
+The booking page embeds the existing Google Form and offers a prefilled email
+draft if the embedded form does not load. In the Google Form settings, allow
+responses from anyone with the link.
 
-- **Meet links are tied to Calendar events** — there is no standalone "create Meet" API. The only supported way to programmatically create a Meet link is by creating a Calendar event with `conferenceData`.
-- **Service Account impersonation** is required via `clientOptions: { subject: ELEVAR_EMAIL }` so the event is created on Elevar's calendar, not the service account's calendar.
-- **Free Gmail accounts** cannot use service accounts with domain-wide delegation. You need a Google Workspace account.
-- If you don't have Workspace, an alternative is using **OAuth2** (user logs in as elevardigitalstudio@gmail.com once, store refresh token).
+## GitHub Pages build
+
+The Pages workflow builds the static site at `/elevar/` and uploads `out/`.
+Portfolio videos are tracked with Git LFS, and checkout must keep `lfs: true` so
+the published videos contain their media data instead of pointer files.

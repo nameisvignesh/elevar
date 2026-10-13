@@ -84,7 +84,7 @@ export default function Footer() {
               elevardigitalstudio@gmail.com
             </a>
             <a
-              href="tel:+919790897877"
+              href="tel:+919363292824"
               style={{
                 display: 'flex',
                 alignItems: 'center',

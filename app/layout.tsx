@@ -5,6 +5,7 @@ import './globals.css';
 import { Navigation } from './components/Navigation';
 import { ChatbotButton } from './components/ChatbotButton';
 import { withBasePath } from '@/lib/paths';
+import { AuthProvider } from './components/AuthProvider';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -12,6 +13,8 @@ const poppins = Poppins({
   variable: '--font-poppins',
   display: 'swap',
 });
+
+const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export const metadata: Metadata = {
   title: 'Elevar - Personal Brand Growth',
@@ -37,7 +40,7 @@ export default function RootLayout({
   const appShell = (
     <>
       <Navigation />
-      <main>{children}</main>
+      <div id="main-content">{children}</div>
       <ChatbotButton />
       <Footer />
     </>
@@ -71,7 +74,15 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>{appShell}</body>
+      <body>
+        {clerkPublishableKey ? (
+          <AuthProvider publishableKey={clerkPublishableKey}>
+            {appShell}
+          </AuthProvider>
+        ) : (
+          appShell
+        )}
+      </body>
     </html>
   );
 

@@ -9,7 +9,6 @@ import {
   ArrowRight,
   BarChart3,
   Bot,
-  Clapperboard,
   FileText,
   Megaphone,
   Sparkles,
@@ -35,15 +34,9 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import dynamic from 'next/dynamic';
 
 import { CustomBundleButton } from './components/CustomBundleButton';
 import { withBasePath } from '@/lib/paths';
-
-const HeroScene = dynamic(() => import('./components/HeroScene'), {
-  ssr: false,
-  loading: () => null,
-});
 
 /* =========================================================
    TYPES
@@ -64,7 +57,6 @@ type Service = {
 
 type WorkVideoItem = {
   id: string;
-  title: string;
   src: string;
   poster?: string;
 };
@@ -161,22 +153,42 @@ const services: Service[] = [
 const work: WorkVideoItem[] = [
   {
     id: 'video-1',
-    title: '',
     src: withBasePath('/family-friend.mp4'),
-    poster: withBasePath('/logo.svg'),
+    poster: '/logo.svg',
   },
   {
     id: 'video-2',
-    title: '',
     src: withBasePath('/final-out-tiles.mp4'),
-    poster: withBasePath('/logo.svg'),
+    poster: '/logo.svg',
   },
   {
     id: 'video-3',
-    title: '',
     src: withBasePath('/nanotiles.mp4'),
-    poster: withBasePath('/logo.svg'),
+    poster: '/logo.svg',
   },
+  {
+    id: 'video-4',
+    src: withBasePath('/reel-6-out.mp4'),
+    poster: '/logo.svg',
+  },
+  {
+    id: 'video-5',
+    src: withBasePath('/final-out.mp4'),
+    poster: '/logo.svg',
+  },
+];
+
+const softwareLogos = [
+  { name: 'After Effects', mark: 'Ae', className: 'after-effects' },
+  { name: 'Premiere Pro', mark: 'Pr', className: 'premiere-pro' },
+  { name: 'DaVinci Resolve', mark: 'DaVinci Resolve', className: 'davinci' },
+  { name: 'CapCut', mark: 'CapCut', className: 'capcut' },
+];
+
+const videoAiLogos = [
+  { name: 'HeyGen', mark: 'HeyGen', className: 'heygen' },
+  { name: 'Higgsfield AI', mark: 'Higgsfield AI', className: 'higgsfield' },
+  { name: 'Google Flow', mark: 'Google Flow', className: 'google-flow' },
 ];
 
 /* =========================================================
@@ -191,123 +203,29 @@ export default function Home() {
       ===================================================== */}
 
       <section className="hero-section">
-        <HeroScene />
-
         <div className="container hero-details">
-          <div className="hero-detail-grid">
-            {/* HERO COPY */}
-
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                delay: 0.08,
-                duration: 0.5,
-              }}
-              className="hero-copy small"
-            >
-              <span className="eyebrow">
-                Content ROI Agency
-              </span>
-
-              <h2 className="sub-head">
-                We don't just edit videos.
-                <br />
-                We build{' '}
-                <span className="gradient">
-                  content
-                </span>{' '}
-                that grows
-                <br />
-                your business.
-              </h2>
-
-              <p>
-                From strategy to publishing and growth
-                analysis, we handle the full lifecycle of
-                high-performance business content.
-              </p>
-
-              <div className="hero-actions">
-                <Link
-                  href="/book-call"
-                  className="btn btn-primary"
-                >
-                  Book Free Strategy Call
-                </Link>
-
-                <Link
-                  href="/selected-work"
-                  className="btn btn-secondary"
-                >
-                  View Our Work
-                </Link>
-              </div>
-            </motion.div>
-
-            {/* MYTH PANEL */}
-
-            <motion.div
-              initial={{
-                opacity: 0,
-                y: 18,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              transition={{
-                delay: 0.14,
-                duration: 0.55,
-              }}
-              className="myth-panel tilt-card"
-            >
-              <div className="myth-visual">
-                <Clapperboard size={34} />
-
-                <strong>
-                  The "80% Gap" in Modern Video Strategy
-                </strong>
-
-                <span>
-                  Most creators edit. We engineer
-                  business impact.
-                </span>
-              </div>
-
-              <div className="myth-stack">
-                <div className="mini-alert">
-                  <small>
-                    Common business myth
-                  </small>
-
-                  <b>
-                    "Just make it look cool."
-                  </b>
-
-                  <span>
-                    Editing is 100% of value. No
-                    strategy, hooks, conversion logic.
-                  </span>
-                </div>
-
-                <div className="mini-alert active">
-                  <small>
-                    The Elevar approach
-                  </small>
-
-                  <b>
-                    Strategy to ROI
-                  </b>
-
-                  <span>
-                    Editing is only 20%. The other 80%
-                    is distribution and conversion.
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08, duration: 0.5 }}
+            className="hero-copy small"
+          >
+            <span className="eyebrow">Content strategy · Production · Growth</span>
+            <h1 className="hero-head">
+              Video that moves your business.
+            </h1>
+            <p>
+              We turn sharp ideas into a consistent content system — from the first script to the final cut and what comes next.
+            </p>
+            <div className="hero-actions">
+              <Link href="/book-call" className="btn btn-primary">
+                Book a strategy call
+              </Link>
+              <Link href="/selected-work" className="btn btn-secondary">
+                Explore our work
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -345,11 +263,7 @@ export default function Home() {
                   </span>
 
                   <div className="process-icon">
-                    <Icon
-                      color="#0077b6"
-                      size={24}
-                      strokeWidth={1.8}
-                    />
+                    <Icon size={24} strokeWidth={1.8} />
                   </div>
 
                   <strong
@@ -399,11 +313,7 @@ export default function Home() {
                       : ''
                     }`}
                 >
-                  <Icon
-                    color="#0077b6"
-                    size={22}
-                    strokeWidth={1.8}
-                  />
+                  <Icon size={22} strokeWidth={1.8} />
 
                   <h3>
                     {service.title}
@@ -467,13 +377,14 @@ export default function Home() {
             <Link
               href="/selected-work"
               className="btn btn-secondary compact"
+              aria-label="More selected work"
             >
-              All Projects
+              More work <ArrowRight size={15} />
             </Link>
           </div>
 
           <div className="work-preview-grid">
-            {work.map((item) => (
+            {work.slice(0, 3).map((item) => (
               <div
                 key={item.id}
                 className="work-preview tilt-card"
@@ -497,6 +408,17 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* =====================================================
+          CREATIVE TOOLKIT
+      ===================================================== */}
+
+      <section className="section toolkit-section" aria-label="Creative toolkit">
+        <div className="container">
+          <LogoGroup title="Software used" logos={softwareLogos} />
+          <LogoGroup title="AI for video generation" logos={videoAiLogos} />
         </div>
       </section>
 
@@ -548,10 +470,7 @@ export default function Home() {
               </p>
 
               <p>
-                My vision is to help founders break
-                scale with premium strategy, cinematic
-                storytelling, and efficient content
-                systems.
+                My vision is to help founders build audience trust and business growth with premium strategy, cinematic storytelling, and efficient content systems.
               </p>
 
               <div className="stat-row">
@@ -566,12 +485,10 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <b>
-                    100K+
-                  </b>
+                  <b aria-hidden="true">↗</b>
 
                   <span>
-                    Total views
+                    Growth rate
                   </span>
                 </div>
 
@@ -630,6 +547,27 @@ export default function Home() {
   );
 }
 
+function LogoGroup({
+  title,
+  logos,
+}: {
+  title: string;
+  logos: { name: string; mark: string; className: string }[];
+}) {
+  return (
+    <div className="toolkit-group">
+      <h2>{title}</h2>
+      <div className="brand-logo-list">
+        {logos.map((logo) => (
+          <div className={`brand-logo ${logo.className}`} key={logo.name} role="img" aria-label={logo.name}>
+            {logo.mark}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* =========================================================
    VIDEO PLAYER
 ========================================================= */
@@ -648,7 +586,7 @@ function WorkPreviewVideo({
   const [volume, setVolume] = useState(1);
   /* Derived from the video's intrinsic dimensions so the card renders in
      its original ratio (no cropping). */
-  const [aspectRatio, setAspectRatio] = useState('16 / 9');
+  const aspectRatio = '9 / 16';
 
   /* Force DOM sync for muted property */
   useEffect(() => {
@@ -782,7 +720,7 @@ function WorkPreviewVideo({
   );
 
   const handleVideoError = useCallback(() => {
-    console.error('Unable to load Vercel Blob video:', item.src);
+    console.error('Unable to load portfolio video:', item.src);
   }, [item.src]);
 
   return (
@@ -813,10 +751,6 @@ function WorkPreviewVideo({
 
           video.muted = isMuted;
           video.volume = volume;
-
-          if (video.videoWidth && video.videoHeight) {
-            setAspectRatio(`${video.videoWidth} / ${video.videoHeight}`);
-          }
 
           if (inView) playVideo();
         }}
@@ -910,7 +844,7 @@ function WorkPreviewVideo({
             justifyContent: 'center',
             borderRadius: 10,
             border: '1px solid rgba(255,255,255,0.15)',
-            background: isMuted ? 'rgba(0,0,0,0.65)' : 'rgba(0,180,216,0.8)',
+            background: 'rgba(0,0,0,0.65)',
             color: '#fff',
             cursor: 'pointer',
             backdropFilter: 'blur(10px)',

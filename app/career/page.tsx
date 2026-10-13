@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Upload, CheckCircle2, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import emailjs from '@emailjs/browser';
 
 type FormState = {
   name: string;
@@ -16,6 +17,12 @@ type FormState = {
 const ACCEPTED_EXTENSIONS = ['pdf', 'doc', 'docx', 'html', 'htm'];
 const MAX_PORTFOLIO_BYTES = 1.5 * 1024 * 1024;
 const APPLICATION_INBOX = 'elevardigitalstudio@gmail.com';
+const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '';
+const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || '';
+const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || '';
+const EMAILJS_CONFIGURED = Boolean(
+  EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY
+);
 
 function getExtension(filename: string): string {
   const idx = filename.lastIndexOf('.');
@@ -31,6 +38,7 @@ export default function CareerPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
@@ -87,41 +95,45 @@ export default function CareerPage() {
     setSuccessMessage(null);
 
     try {
-      // Send application via API route with file attachment
-      const formData = new FormData();
-      formData.append('name', form.name);
-      formData.append('email', form.email);
-      formData.append('linkedin', form.linkedin || '');
-      formData.append('location', form.location || '');
-      formData.append('role', form.role);
-      formData.append('portfolio', portfolioFile);
-
-      const response = await fetch('/api/career', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send application');
+      if (EMAILJS_CONFIGURED && formRef.current) {
+        await emailjs.sendForm(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          formRef.current,
+          EMAILJS_PUBLIC_KEY
+        );
+      } else {
+        const body = [
+          'Career application',
+          '',
+          `Name: ${form.name}`,
+          `Email: ${form.email}`,
+          `Target role: ${form.role}`,
+          `LinkedIn: ${form.linkedin || 'Not provided'}`,
+          `Location: ${form.location || 'Not provided'}`,
+          '',
+          `Portfolio file to attach: ${portfolioFile.name}`,
+          'Please attach the portfolio file before sending this email.',
+        ].join('\n');
+        window.location.href = `mailto:${APPLICATION_INBOX}?subject=${encodeURIComponent(
+          `Career Application: ${form.role} - ${form.name}`
+        )}&body=${encodeURIComponent(body)}`;
+        setSuccessMessage('Your email draft is ready. Attach your portfolio file before sending.');
+        return;
       }
 
-      // Success - show message
       setForm({ name: '', email: '', linkedin: '', location: '', role: '' });
       setPortfolioFile(null);
       setPortfolioName(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       setError(null);
-      setSuccessMessage('Application sent successfully with portfolio attached!');
-      
-      // Clear success message after 6 seconds
+      setSuccessMessage('Application sent successfully with your portfolio attached.');
       setTimeout(() => setSuccessMessage(null), 6000);
     } catch (err) {
       setError(
         err instanceof Error
-          ? `Failed to send application: ${err.message}`
-          : 'Failed to send application. Please try again or email directly to elevardigitalstudio@gmail.com'
+          ? `We couldn’t send your application: ${err.message}`
+          : `We couldn’t send your application. Please email ${APPLICATION_INBOX} directly.`
       );
     } finally {
       setIsSubmitting(false);
@@ -148,7 +160,7 @@ export default function CareerPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="form-grid">
+          <form ref={formRef} onSubmit={handleSubmit} className="form-grid">
             <div className="form-row">
               <div className="field">
                 <label htmlFor="name">Full Name *</label>
@@ -228,6 +240,7 @@ export default function CareerPage() {
                     <input
                       ref={fileInputRef}
                       type="file"
+                      name="portfolio"
                       accept=".pdf,.doc,.docx,.html,.htm,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/html"
                       onChange={handleFile}
                       disabled={isSubmitting}
@@ -239,15 +252,21 @@ export default function CareerPage() {
             </div>
 
             {error && (
-              <div style={{ color: '#ff4d4d', fontSize: '0.85rem', marginTop: 4 }}>
+              <div className="form-error" role="alert">
                 {error}
               </div>
             )}
 
             {successMessage && (
-              <div style={{ color: '#22c55e', fontSize: '0.85rem', marginTop: 4 }}>
+              <div className="form-success" role="status">
                 ✓ {successMessage}
               </div>
+            )}
+
+            {!EMAILJS_CONFIGURED && (
+              <p className="form-note">
+                Your email app will open with the application details. Attach the portfolio file before sending.
+              </p>
             )}
 
             <div style={{ marginTop: 12 }}>
@@ -263,17 +282,17 @@ export default function CareerPage() {
                     <Loader size={16} className="animate-spin" /> Sending...
                   </>
                 ) : detailsComplete ? (
-                  'Send Application'
+                  EMAILJS_CONFIGURED ? 'Send Application' : 'Open Email Draft'
                 ) : (
                   <>
-                    <CheckCircle2 size={16} /> Fill all details to enable
+                    <CheckCircle2 size={16} /> Complete the required fields
                   </>
                 )}
               </Button>
             </div>
 
             <p style={{ margin: '12px 0 0', fontSize: '0.82rem', color: 'var(--muted)', textAlign: 'center' }}>
-              Your application will be sent directly to{' '}
+              {EMAILJS_CONFIGURED ? 'Applications are sent to ' : 'You can email your application to '}{' '}
               <a
                 href={`mailto:${APPLICATION_INBOX}`}
                 style={{ color: 'var(--primary)', textDecoration: 'underline' }}

@@ -21,7 +21,7 @@
 
 ## ✨ What it is
 
-**Elevar** is a sleek, dark-first marketing site for a content ROI agency. From strategy to publishing and growth analysis, it handles the full lifecycle of high-performance business content — wrapped in a fast, animated, conversion-focused UI.
+**Elevar** is a content studio for founders and growing brands. The site presents its services, founder story, client feedback, and vertical video work in a quiet, monochrome interface.
 
 > Content ROI Agency · Full-funnel content systems for founders &amp; personal brands.
 
@@ -43,10 +43,12 @@
 
 ## 🧩 Key Sections
 
-- **Hero** — animated 3D scene (`react-three-fiber` / `three`) with a scroll-stopping value prop and dual CTAs.
+- **Hero** — a direct introduction to Elevar and its content services.
 - **Process** — an 8-step engine: Discovery → Strategy → Script → Pre-Prod → Production → Post → Publishing → Growth Analysis.
 - **Services** — Video Editing, Content Strategy, AI Production, Social Management, Brand Content, and a Custom Bundle.
-- **Portfolio** — vertical 9:16 reels showcasing real work.
+- **Portfolio** — vertical 9:16 reels showcasing selected work.
+- **Production tools** — software and AI video generation tools used by the team.
+- **Testimonials** — a static grid of client feedback.
 - **About / Founder** — brand story with founder imagery.
 - **Book a Call** — discovery-call capture flow.
 - **Chat Support** — a lightweight conversational helper that routes visitors to the right next step.
@@ -54,10 +56,10 @@
 
 ## 🎨 Design Highlights
 
-- 🌗 **Light / Dark mode** with a persistent theme toggle (stored in `localStorage`).
-- 🌀 **3D hero** powered by Three.js for an immersive first impression.
-- 🎞️ **Framer Motion** micro-interactions and scroll reveals.
-- 🧱 **Tailwind CSS** design system with CSS variables for surfaces, borders, and shadows.
+- 🌗 **Light / Dark mode** with a persistent theme toggle.
+- 🌊 A subtle animated wave and light texture in both themes.
+- 🎞️ **Framer Motion** interactions and scroll reveals.
+- 🧱 A monochrome design system built with CSS variables.
 - 📱 Fully **responsive** — looks sharp from phone to widescreen.
 - 💬 Floating **chatbot button** for instant guidance.
 
@@ -68,9 +70,10 @@
 | Framework | Next.js 14 (App Router, static export) |
 | UI | React 18, Tailwind CSS, Radix UI primitives |
 | Motion | Framer Motion |
-| 3D | Three.js, `@react-three/fiber`, `@react-three/drei` |
 | Icons | lucide-react |
-| Forms | Career → mailto; Book-a-Call → embedded Google Form |
+| Login / signup | Clerk browser SDK |
+| Career applications | EmailJS browser SDK with email-draft fallback |
+| Booking | Embedded Google Form with email-draft fallback |
 | Deploy | GitHub Pages (`/elevar` base path) |
 
 ## 🚀 Getting Started
@@ -89,7 +92,7 @@ bun run build
 bun run start
 ```
 
-> 💡 Environment variables are documented in `.env.example` / `.env.local.example`.
+> 💡 Production integrations and required GitHub repository secrets are documented in [SETUP_GUIDE.md](SETUP_GUIDE.md) and `.env.example`.
 
 ## 📁 Project Structure
 
@@ -100,7 +103,7 @@ app/
   book-call/            # discovery call capture
   career/               # open roles
   selected-work/        # portfolio detail
-  components/           # Navigation, Footer, HeroScene, ChatbotButton, ...
+  components/           # Navigation, Footer, auth, testimonials, ...
 components/ui/          # shared UI primitives
 public/                 # logo, founder image, portfolio videos
 docs/screenshots/       # UI previews
@@ -108,7 +111,7 @@ docs/screenshots/       # UI previews
 
 ## 🌍 Deployment
 
-The site is exported statically and served from **GitHub Pages** under the `/elevar` path. Production builds set `basePath` / `assetPrefix` automatically via `next.config.mjs`.
+The site is exported statically and served from **GitHub Pages** under the `/elevar` path. Production builds set `basePath` / `assetPrefix` automatically via `next.config.mjs`. Server API routes are not available on Pages; career submissions use EmailJS in the browser. Configure Clerk and EmailJS secrets before rebuilding to activate those integrations.
 
 ---
 
