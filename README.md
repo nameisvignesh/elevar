@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="docs/screenshots/desktop.png" alt="Elevar Studio website on desktop" width="100%" />
-</p>
-
 <h1 align="center">Elevar</h1>
 
 <p align="center">
